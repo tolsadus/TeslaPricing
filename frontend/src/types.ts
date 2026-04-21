@@ -35,4 +35,5 @@ export type ListingFilters = {
   sort_by?: SortBy;
   sort_dir?: SortDir;
   limit?: number;
+  offset?: number;
 };

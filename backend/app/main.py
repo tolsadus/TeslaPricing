@@ -6,7 +6,7 @@ from sqlalchemy import nulls_last, select
 from sqlalchemy.orm import Session
 
 from app.db import get_db, init_db
-from app.models import Listing, PriceHistory
+from app.models import Listing, ListingPhoto, PriceHistory
 from app.schemas import ListingOut, PricePoint
 
 app = FastAPI(title="Crawsla API")
@@ -100,6 +100,16 @@ def get_listing(listing_id: int, db: Annotated[Session, Depends(get_db)]):
 
         raise HTTPException(status_code=404, detail="Listing not found")
     return listing
+
+
+@app.get("/api/listings/{listing_id}/photos", response_model=list[str])
+def get_photos(listing_id: int, db: Annotated[Session, Depends(get_db)]):
+    rows = db.execute(
+        select(ListingPhoto.url)
+        .where(ListingPhoto.listing_id == listing_id)
+        .order_by(ListingPhoto.sort_order)
+    ).scalars().all()
+    return list(rows)
 
 
 @app.get("/api/listings/{listing_id}/price-history", response_model=list[PricePoint])

@@ -167,12 +167,14 @@ def _extract_image(ad: dict) -> str | None:
                         return value["uri"]
     thumbnail = _first(ad, "thumbnail", "mainImage", "image")
     if isinstance(thumbnail, str):
-        return thumbnail
-    if isinstance(thumbnail, dict):
-        for key in ("uri", "url", "src"):
-            if isinstance(thumbnail.get(key), str):
-                return thumbnail[key]
-    return None
+        raw = thumbnail
+    elif isinstance(thumbnail, dict):
+        raw = next((thumbnail[k] for k in ("uri", "url", "src") if isinstance(thumbnail.get(k), str)), None)
+    else:
+        raw = None
+    if raw and not raw.startswith("http"):
+        raw = "https://" + raw.lstrip("/")
+    return raw
 
 
 def _ad_to_listing(ad: dict) -> ScrapedListing | None:

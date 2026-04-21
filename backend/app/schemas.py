@@ -1,6 +1,6 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_serializer
 
 
 class ListingOut(BaseModel):
@@ -23,12 +23,24 @@ class ListingOut(BaseModel):
     image_url: str | None
     scraped_at: datetime
 
+    @field_serializer("scraped_at")
+    def _serialize_scraped_at(self, v: datetime) -> str:
+        if v.tzinfo is None:
+            v = v.replace(tzinfo=timezone.utc)
+        return v.isoformat()
+
 
 class PricePoint(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     price_eur: int | None
     recorded_at: datetime
+
+    @field_serializer("recorded_at")
+    def _serialize_recorded_at(self, v: datetime) -> str:
+        if v.tzinfo is None:
+            v = v.replace(tzinfo=timezone.utc)
+        return v.isoformat()
 
 
 class ListingIn(BaseModel):

@@ -18,6 +18,18 @@ export async function fetchListing(id: number): Promise<Listing> {
   return res.json();
 }
 
+export async function fetchPhotos(id: number): Promise<string[]> {
+  const res = await fetch(`/api/listings/${id}/photos`);
+  if (!res.ok) throw new Error(`API error ${res.status}`);
+  return res.json();
+}
+
+export async function fetchStats(): Promise<{ total: number }> {
+  const res = await fetch("/api/stats");
+  if (!res.ok) throw new Error(`API error ${res.status}`);
+  return res.json();
+}
+
 export async function fetchPriceHistory(id: number): Promise<PricePoint[]> {
   const res = await fetch(`/api/listings/${id}/price-history`);
   if (!res.ok) throw new Error(`API error ${res.status}`);

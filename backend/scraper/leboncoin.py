@@ -145,7 +145,9 @@ async def _scrape_page(browser: Browser, url: str, debug: bool = False) -> list[
         user_agent=USER_AGENT,
         viewport={"width": 1440, "height": 900},
         locale="fr-FR",
+        java_script_enabled=True,
     )
+    await context.add_init_script(_STEALTH_SCRIPT)
     page = await context.new_page()
 
     # Capture JSON responses that look like search-result payloads.
@@ -233,10 +235,26 @@ async def _scrape_page(browser: Browser, url: str, debug: bool = False) -> list[
         await context.close()
 
 
+_STEALTH_ARGS = [
+    "--disable-blink-features=AutomationControlled",
+    "--no-sandbox",
+    "--disable-dev-shm-usage",
+    "--disable-infobars",
+    "--window-size=1440,900",
+]
+
+_STEALTH_SCRIPT = """
+Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
+Object.defineProperty(navigator, 'plugins', {get: () => [1,2,3,4,5]});
+Object.defineProperty(navigator, 'languages', {get: () => ['fr-FR', 'fr', 'en-US', 'en']});
+window.chrome = {runtime: {}};
+"""
+
+
 async def scrape(search_url: str = SEARCH_URL, pages: int = 1, debug: bool = False) -> list[ScrapedListing]:
     all_results: list[ScrapedListing] = []
     async with async_playwright() as pw:
-        browser = await pw.chromium.launch(headless=not debug)
+        browser = await pw.chromium.launch(headless=True, args=_STEALTH_ARGS)
         try:
             for page_num in range(1, pages + 1):
                 if page_num == 1:

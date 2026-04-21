@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { fetchListing, fetchPriceHistory } from "./api";
+import { fetchListing, fetchPhotos, fetchPriceHistory } from "./api";
 import type { Listing, PricePoint } from "./types";
 
 function formatPrice(v: number | null): string {
@@ -97,17 +97,42 @@ function PriceChart({ points }: { points: PricePoint[] }) {
   );
 }
 
+function Carousel({ photos, fallback }: { photos: string[]; fallback: string | null }) {
+  const [index, setIndex] = useState(0);
+  const images = photos.length > 0 ? photos : fallback ? [fallback] : [];
+  if (images.length === 0) return null;
+
+  return (
+    <div className="carousel">
+      <img src={images[index]} alt={`Photo ${index + 1}`} referrerPolicy="no-referrer" />
+      {images.length > 1 && (
+        <>
+          <button className="carousel-btn prev" onClick={() => setIndex((i) => (i - 1 + images.length) % images.length)}>‹</button>
+          <button className="carousel-btn next" onClick={() => setIndex((i) => (i + 1) % images.length)}>›</button>
+          <div className="carousel-dots">
+            {images.map((_, i) => (
+              <button key={i} className={`dot ${i === index ? "active" : ""}`} onClick={() => setIndex(i)} />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function ListingDetail({ id }: { id: number }) {
   const [listing, setListing] = useState<Listing | null>(null);
   const [history, setHistory] = useState<PricePoint[]>([]);
+  const [photos, setPhotos] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setError(null);
-    Promise.all([fetchListing(id), fetchPriceHistory(id)])
-      .then(([l, h]) => {
+    Promise.all([fetchListing(id), fetchPriceHistory(id), fetchPhotos(id)])
+      .then(([l, h, p]) => {
         setListing(l);
         setHistory(h);
+        setPhotos(p);
       })
       .catch((e) => setError(e.message));
   }, [id]);
@@ -125,7 +150,7 @@ export default function ListingDetail({ id }: { id: number }) {
       <button className="back-btn" onClick={() => { window.location.hash = ""; }}>← Back</button>
 
       <div className="detail-grid">
-        {listing.image_url && <img className="detail-img" src={listing.image_url} alt={listing.title} />}
+        <Carousel photos={photos} fallback={listing.image_url} />
         <div className="detail-info">
           <h2>{listing.title}</h2>
           <p className="detail-price">{formatPrice(listing.price_eur)}</p>

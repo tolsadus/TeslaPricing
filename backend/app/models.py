@@ -36,6 +36,17 @@ class Listing(Base):
     scraped_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, index=True)
 
 
+class ListingPhoto(Base):
+    __tablename__ = "listing_photos"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    listing_id: Mapped[int] = mapped_column(
+        ForeignKey("listings.id", ondelete="CASCADE"), index=True
+    )
+    url: Mapped[str] = mapped_column(String(512))
+    sort_order: Mapped[int] = mapped_column(Integer, default=0)
+
+
 class PriceHistory(Base):
     __tablename__ = "price_history"
 

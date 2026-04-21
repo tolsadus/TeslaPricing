@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { fetchListings } from "./api";
+import { useEffect, useRef, useState } from "react";
+import { fetchListings, fetchStats } from "./api";
 import ListingDetail from "./ListingDetail";
 import type { Listing, ListingFilters, SortBy, SortDir } from "./types";
 
@@ -27,6 +27,16 @@ function formatKm(v: number | null): string {
   return `${new Intl.NumberFormat("fr-FR").format(v)} km`;
 }
 
+function formatDate(iso: string): string {
+  return new Intl.DateTimeFormat("fr-FR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(iso));
+}
+
 function useHashRoute(): string {
   const [hash, setHash] = useState(window.location.hash);
   useEffect(() => {
@@ -46,30 +56,68 @@ export default function App() {
   const hash = useHashRoute();
   const detailId = parseListingId(hash);
 
+  const LIMIT = 50;
+  const [totalCount, setTotalCount] = useState<number | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
   const [filters, setFilters] = useState<ListingFilters>({
     sort_by: "scraped_at",
     sort_dir: "desc",
-    limit: 1000,
+    limit: LIMIT,
   });
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    fetchStats().then((s) => setTotalCount(s.total)).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (detailId !== null) return;
     setLoading(true);
     setError(null);
-    fetchListings(filters)
-      .then(setListings)
+    setOffset(0);
+    fetchListings({ ...filters, offset: 0 })
+      .then((data) => {
+        setListings(data);
+        setHasMore(data.length === LIMIT);
+      })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, [filters, detailId]);
+
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting && hasMore && !loadingMore) loadMore(); },
+      { rootMargin: "200px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  });
+
+  function loadMore() {
+    const nextOffset = offset + LIMIT;
+    setLoadingMore(true);
+    fetchListings({ ...filters, offset: nextOffset })
+      .then((data) => {
+        setListings((prev) => [...prev, ...data]);
+        setOffset(nextOffset);
+        setHasMore(data.length === LIMIT);
+      })
+      .catch((e) => setError(e.message))
+      .finally(() => setLoadingMore(false));
+  }
 
   return (
     <div className="app">
       <div className="topbar">
         <a className="brand" href="#">Crawsla</a>
-        <div className="topbar-meta">{detailId !== null ? "Detail" : `${listings.length} inventory`}</div>
+        <div className="topbar-meta">{detailId !== null ? "Detail" : `${totalCount ?? "…"} inventory`}</div>
       </div>
 
       {detailId !== null ? (
@@ -147,7 +195,7 @@ export default function App() {
             <ul className="grid">
               {listings.map((listing) => (
                 <li key={listing.id} className="card">
-                  {listing.image_url && <img src={listing.image_url} alt={listing.title} />}
+                  {listing.image_url && <img src={listing.image_url} alt={listing.title} referrerPolicy="no-referrer" />}
                   <div className="card-body">
                     <h3>{listing.title}</h3>
                     <p className="price">{formatPrice(listing.price_eur)}</p>
@@ -155,6 +203,7 @@ export default function App() {
                       {listing.year ?? "—"} · {formatKm(listing.mileage_km)} · {listing.fuel ?? "—"}
                     </p>
                     <p className="location">{listing.location ?? ""}</p>
+                    <p className="scraped-at">Crawled {formatDate(listing.scraped_at)}</p>
                     <div className="cta-row">
                       <a className="btn btn-primary" href={`#/listing/${listing.id}`}>
                         View
@@ -165,6 +214,10 @@ export default function App() {
                 </li>
               ))}
             </ul>
+
+            <div ref={sentinelRef} className="load-more">
+              {loadingMore && <p className="state">Loading…</p>}
+            </div>
           </div>
         </>
       )}
