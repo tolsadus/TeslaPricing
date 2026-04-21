@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+
+# SQLite
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# Playwright browser profiles
+.profiles/
+
+# Editors / OS
+.DS_Store
+.vscode/
+.idea/
