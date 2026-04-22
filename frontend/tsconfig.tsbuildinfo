@@ -1,1 +1,1 @@
-{"root":["./src/app.tsx","./src/listingdetail.tsx","./src/trends.tsx","./src/api.ts","./src/main.tsx","./src/types.ts"],"version":"5.9.3"}
+{"root":["./src/app.tsx","./src/listingdetail.tsx","./src/trends.tsx","./src/api.ts","./src/main.tsx","./src/supabase.ts","./src/types.ts"],"version":"5.9.3"}

@@ -2,20 +2,22 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "scraper/cli.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "scrape": "node scraper/cli.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@kikobeats/time-span": "^1.0.13",
+    "commander": "^12.0.0",
     "debug": "^4.4.3",
     "debug-logfmt": "^1.4.11",
     "dotenv": "^16.0.0",
     "p-retry": "^8.0.0",
     "pg": "^8.13.0",
+    "playwright": "^1.48.0",
     "tesla-inventory": "^3.5.360"
   }
 }
