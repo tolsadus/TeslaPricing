@@ -35,9 +35,10 @@ program
   .command('leboncoin')
   .description('Scrape Leboncoin listings via Playwright')
   .option('--pages <n>', 'number of pages', v => parseInt(v, 10), 1)
-  .action(async ({ pages }) => {
+  .option('--headed', 'open a browser window (needed to solve captcha on first run)')
+  .action(async ({ pages, headed }) => {
     const { scrape } = require('./leboncoin')
-    const listings = await scrape({ pages })
+    const listings = await scrape({ pages, headed })
     const n = await upsert(listings)
     console.log(`\nDone. Upserted ${n} listings.`)
     await pool.end()
@@ -50,6 +51,31 @@ program
   .action(async ({ models }) => {
     const { scrape } = require('./tesla')
     const listings = await scrape({ models: models.split(',') })
+    const n = await upsert(listings)
+    console.log(`\nDone. Upserted ${n} listings.`)
+    await pool.end()
+  })
+
+program
+  .command('aramisauto')
+  .description('Scrape Aramisauto Tesla listings via Playwright')
+  .option('--pages <n>', 'number of pages', v => parseInt(v, 10), 1)
+  .option('--headed', 'open a browser window (useful if a cookie wall blocks headless)')
+  .action(async ({ pages, headed }) => {
+    const { scrape } = require('./aramisauto')
+    const listings = await scrape({ pages, headed })
+    const n = await upsert(listings)
+    console.log(`\nDone. Upserted ${n} listings.`)
+    await pool.end()
+  })
+
+program
+  .command('renew')
+  .description('Scrape Renew Auto Tesla listings')
+  .option('--pages <n>', 'number of pages', v => parseInt(v, 10), 5)
+  .action(async ({ pages }) => {
+    const { scrape } = require('./renew')
+    const listings = await scrape({ pages })
     const n = await upsert(listings)
     console.log(`\nDone. Upserted ${n} listings.`)
     await pool.end()

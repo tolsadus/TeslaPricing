@@ -1,21 +1,20 @@
 'use strict'
 
-const { chromium } = require('playwright')
+const fs = require('fs')
+const os = require('os')
+const path = require('path')
+const { chromium } = require('playwright-extra')
+const StealthPlugin = require('puppeteer-extra-plugin-stealth')
+
+chromium.use(StealthPlugin())
 
 const BASE_URL = 'https://www.leboncoin.fr'
 const SEARCH_URL = `${BASE_URL}/recherche?category=2&u_car_brand=TESLA`
+const PROFILE_DIR = path.join(os.homedir(), '.crawsla', 'leboncoin-profile')
 
-const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36'
+const USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
 
-const STEALTH_SCRIPT = `
-Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
-Object.defineProperty(navigator, 'plugins', {get: () => [1,2,3,4,5]});
-Object.defineProperty(navigator, 'languages', {get: () => ['fr-FR', 'fr', 'en-US', 'en']});
-window.chrome = {runtime: {}};
-`
-
-const STEALTH_ARGS = [
-  '--disable-blink-features=AutomationControlled',
+const LAUNCH_ARGS = [
   '--no-sandbox',
   '--disable-dev-shm-usage',
   '--disable-infobars',
@@ -101,17 +100,21 @@ function adToListing(ad) {
   }
 }
 
-async function scrapePage(browser, url) {
-  const context = await browser.newContext({
-    userAgent: USER_AGENT,
-    viewport: { width: 1440, height: 900 },
-    locale: 'fr-FR',
-    javaScriptEnabled: true,
-  })
-  await context.addInitScript(STEALTH_SCRIPT)
-  const page = await context.newPage()
+async function isCaptchaPage(page) {
+  const title = await page.title()
+  if (title === 'leboncoin.fr') return true
+  try {
+    const body = await page.locator('body').textContent({ timeout: 2000 })
+    return /verification required|slide right|datadome/i.test(body)
+  } catch {
+    return false
+  }
+}
 
+async function scrapePage(context, url) {
+  const page = await context.newPage()
   const capturedPayloads = []
+
   page.on('response', async response => {
     try {
       const reqUrl = response.url()
@@ -132,6 +135,10 @@ async function scrapePage(browser, url) {
     } catch {}
     try { await page.waitForLoadState('networkidle', { timeout: 10000 }) } catch {}
     await page.waitForTimeout(1000 + Math.random() * 1000)
+
+    if (await isCaptchaPage(page)) {
+      return { listings: [], captcha: true }
+    }
 
     let nextRaw = null
     try {
@@ -155,26 +162,54 @@ async function scrapePage(browser, url) {
         console.error(`  ! ad parse failed: ${err.message}`)
       }
     }
-    return listings
+    return { listings, captcha: false }
   } finally {
-    await context.close()
+    await page.close()
   }
 }
 
-async function scrape({ pages = 1 } = {}) {
-  const browser = await chromium.launch({ headless: true, args: STEALTH_ARGS, slowMo: 150 })
+async function scrape({ pages = 1, headed = false } = {}) {
+  fs.mkdirSync(PROFILE_DIR, { recursive: true })
+
+  const context = await chromium.launchPersistentContext(PROFILE_DIR, {
+    headless: !headed,
+    args: LAUNCH_ARGS,
+    slowMo: 150,
+    userAgent: USER_AGENT,
+    viewport: { width: 1440, height: 900 },
+    locale: 'fr-FR',
+  })
+
   const all = new Map()
   try {
-    for (let page = 1; page <= pages; page++) {
-      const url = page === 1 ? SEARCH_URL : `${SEARCH_URL}&page=${page}`
-      console.log(`[leboncoin] page ${page}: ${url}`)
-      const results = await scrapePage(browser, url)
-      console.log(`  -> ${results.length} listings`)
-      for (const l of results) all.set(l.external_id, l)
-      if (page < pages) await new Promise(r => setTimeout(r, 3000 + Math.random() * 3000))
+    for (let p = 1; p <= pages; p++) {
+      const url = p === 1 ? SEARCH_URL : `${SEARCH_URL}&page=${p}`
+      console.log(`[leboncoin] page ${p}: ${url}`)
+      const { listings, captcha } = await scrapePage(context, url)
+
+      if (captcha) {
+        if (headed) {
+          console.log('  ! Captcha detected. Solve it in the browser window, then press Enter here...')
+          await new Promise(resolve => process.stdin.once('data', resolve))
+          // retry the same page after manual solve
+          const retry = await scrapePage(context, url)
+          if (retry.captcha) { console.error('  ! Still blocked after captcha solve. Aborting.'); break }
+          for (const l of retry.listings) all.set(l.external_id, l)
+          console.log(`  -> ${retry.listings.length} listings`)
+        } else {
+          console.error('  ! Captcha detected. Run once in headed mode to solve it:')
+          console.error('  !   node scraper/cli.js leboncoin --headed')
+          break
+        }
+        continue
+      }
+
+      console.log(`  -> ${listings.length} listings`)
+      for (const l of listings) all.set(l.external_id, l)
+      if (p < pages) await new Promise(r => setTimeout(r, 3000 + Math.random() * 3000))
     }
   } finally {
-    await browser.close()
+    await context.close()
   }
   return [...all.values()]
 }
