@@ -16,7 +16,7 @@ const { branch, commit } = gitInfo();
 
 export default defineConfig({
   plugins: [react()],
-  base: process.env.NODE_ENV === "production" ? "/Crawsla/" : "/",
+  base: process.env.NODE_ENV === "production" ? "/TeslaPricing/" : "/",
   define: {
     __GIT_BRANCH__: JSON.stringify(branch),
     __GIT_COMMIT__: JSON.stringify(commit),

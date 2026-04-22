@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Launch the Crawsla frontend (Vite) in dev mode.
+# Launch the TeslaPricing frontend (Vite) in dev mode.
 # Ctrl+C stops it cleanly.
 #
 # Options:

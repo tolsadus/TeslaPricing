@@ -193,7 +193,7 @@ export default function App() {
   return (
     <div className="app">
       <div className="topbar">
-        <a className="brand" href="#">Crawsla</a>
+        <a className="brand" href="#">TeslaPricing</a>
         <nav className="topbar-nav">
           <a className={`nav-link ${page === "listings" || page === "detail" ? "active" : ""}`} href="#">Listings</a>
           <a className={`nav-link ${page === "trends" ? "active" : ""}`} href="#/trends">Trends</a>

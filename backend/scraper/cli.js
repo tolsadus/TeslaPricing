@@ -5,7 +5,7 @@ const { Command } = require('commander')
 const { upsert, pool } = require('./db')
 
 const program = new Command()
-program.name('scrape').description('Crawsla scraper CLI')
+program.name('scrape').description('TeslaPricing scraper CLI')
 
 program
   .command('capcar')
@@ -75,6 +75,18 @@ program
   .option('--pages <n>', 'number of pages', v => parseInt(v, 10), 5)
   .action(async ({ pages }) => {
     const { scrape } = require('./renew')
+    const listings = await scrape({ pages })
+    const n = await upsert(listings)
+    console.log(`\nDone. Upserted ${n} listings.`)
+    await pool.end()
+  })
+
+program
+  .command('lbauto')
+  .description('Scrape LB Automobiles Tesla listings via JSON-LD')
+  .option('--pages <n>', 'number of pages', v => parseInt(v, 10), 10)
+  .action(async ({ pages }) => {
+    const { scrape } = require('./lbauto')
     const listings = await scrape({ pages })
     const n = await upsert(listings)
     console.log(`\nDone. Upserted ${n} listings.`)
