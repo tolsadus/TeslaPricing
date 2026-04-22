@@ -29,10 +29,14 @@ function formatDate(iso: string): string {
 
 type Series = { model: string; color: string; points: { date: string; avg: number; min: number; max: number; count: number }[] };
 
+function normalizeModel(name: string): string {
+  return name.replace(/-/g, " ").replace(/\s+/g, " ").trim();
+}
+
 function buildSeries(data: TrendPoint[]): Series[] {
   const map = new Map<string, Series["points"]>();
   for (const row of data) {
-    const key = row.model ?? "Unknown";
+    const key = normalizeModel(row.model ?? "Unknown");
     if (!map.has(key)) map.set(key, []);
     if (row.avg_price !== null) {
       map.get(key)!.push({
