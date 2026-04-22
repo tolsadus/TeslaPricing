@@ -82,7 +82,7 @@ function parseListing(body, vid) {
     source: 'gmecars',
     external_id: vid,
     title,
-    make: make ? make.replace(/\b\w/g, c => c.toUpperCase()) : null,
+    make: make ? make.toLowerCase().replace(/\b\w/g, c => c.toUpperCase()) : null,
     model,
     version,
     price_eur,
@@ -146,4 +146,4 @@ async function scrape({ pages = 1 } = {}) {
   return [...all.values()]
 }
 
-module.exports = { scrape }
+module.exports = { scrape, parseListing, parsePage }

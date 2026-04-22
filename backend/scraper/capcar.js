@@ -35,7 +35,7 @@ function parseHit(hit) {
   const pkg = hit.carPackage || ''
   const title = [brand, version, pkg].filter(Boolean).join(' ')
 
-  const city = (hit.city || '').replace(/\b\w/g, c => c.toUpperCase())
+  const city = (hit.city || '').toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
   const location = [city, hit.department].filter(Boolean).join(', ') || null
 
   const energy = (hit.energy || '').toUpperCase()
@@ -101,4 +101,4 @@ async function scrape({ pages = 10 } = {}) {
   return [...results.values()]
 }
 
-module.exports = { scrape }
+module.exports = { scrape, parseHit }

@@ -72,4 +72,4 @@ async function scrape({ models = MODELS } = {}) {
   return all
 }
 
-module.exports = { scrape }
+module.exports = { scrape, parseItem }

@@ -4,7 +4,8 @@
   "description": "",
   "main": "scraper/cli.js",
   "scripts": {
-    "scrape": "node scraper/cli.js"
+    "scrape": "node scraper/cli.js",
+    "test": "node --test tests/*.test.js"
   },
   "keywords": [],
   "author": "",

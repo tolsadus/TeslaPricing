@@ -86,8 +86,8 @@ function adToListing(ad) {
     source: 'leboncoin',
     external_id: String(list_id),
     title,
-    make: make ? make.replace(/\b\w/g, c => c.toUpperCase()) : null,
-    model: model ? model.replace(/\b\w/g, c => c.toUpperCase()) : null,
+    make: make ? make.toLowerCase().replace(/\b\w/g, c => c.toUpperCase()) : null,
+    model: model ? model.toLowerCase().replace(/\b\w/g, c => c.toUpperCase()) : null,
     version: null,
     price_eur,
     year,
@@ -179,4 +179,4 @@ async function scrape({ pages = 1 } = {}) {
   return [...all.values()]
 }
 
-module.exports = { scrape }
+module.exports = { scrape, adToListing, findAds }
