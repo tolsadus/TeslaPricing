@@ -1,4 +1,4 @@
-# Crawsla
+# TeslaPricing
 
 Aggregated Tesla used-car listings scraped from multiple French marketplaces. React frontend backed directly by Supabase, with a Node.js scraper suite.
 
@@ -22,6 +22,7 @@ Aggregated Tesla used-car listings scraped from multiple French marketplaces. Re
 | [AramisAuto](https://www.aramisauto.com) | `aramisauto` | Playwright — DOM extraction (Nuxt SSR) |
 | [Renew Auto](https://fr.renew.auto) | `renew` | HTTP — parses `window.APP_STATE` JSON blob |
 | [LB Automobiles](https://www.lb-automobiles.com) | `lbauto` | HTTP — parses `application/ld+json` structured data |
+| [La Centrale](https://www.lacentrale.fr) | `lacentrale` | Playwright — DOM extraction from SSR HTML (supports account login) |
 
 ## Stack
 
@@ -38,7 +39,7 @@ cd backend && npm install
 cd frontend && npm install
 ```
 
-### Playwright browsers (required for `leboncoin` and `aramisauto`)
+### Playwright browsers (required for `leboncoin`, `aramisauto`, and `lacentrale`)
 
 ```bash
 cd backend && npx playwright install chromium
@@ -86,10 +87,14 @@ Frontend runs on `http://localhost:5173`.
 | `./scrape.sh aramisauto --headed` | Open browser window if blocked |
 | `./scrape.sh renew` | Scrape Renew Auto |
 | `./scrape.sh lbauto` | Scrape LB Automobiles |
+| `./scrape.sh lacentrale` | Scrape La Centrale (1 page, headless) |
+| `./scrape.sh lacentrale --headed` | Open browser window — required on first run to solve captcha |
+| `./scrape.sh lacentrale --pages 5` | Multiple pages |
+| `./scrape.sh lacentrale --login` | Log in to your account and save the session (reduces bot detection) |
 | `./scrape.sh all` | Run all scrapers in sequence |
 
 ## Deployment
 
 The frontend is deployed automatically to GitHub Pages via GitHub Actions on every push to `main`. The workflow lives in [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml).
 
-Live: **https://tolsadus.github.io/Crawsla/**
+Live: **https://tolsadus.github.io/TeslaPricing/**
