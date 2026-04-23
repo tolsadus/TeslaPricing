@@ -30,7 +30,7 @@ function parseIntSafe(text) {
 function getAttr(attrs, key) {
   for (const attr of attrs || []) {
     if (attr.key === key) {
-      const v = attr.value ?? attr.value_label
+      const v = attr.value_label ?? attr.value
       return v != null ? String(v) : null
     }
   }
@@ -72,6 +72,10 @@ function adToListing(ad) {
   const mileage_km = parseIntSafe(getAttr(attrs, 'mileage'))
   const fuel = getAttr(attrs, 'fuel')
   const gearbox = getAttr(attrs, 'gearbox')
+  const color = getAttr(attrs, 'color')
+  const horse_power = parseIntSafe(getAttr(attrs, 'horse_power_din') ?? getAttr(attrs, 'horse_power'))
+  const doors = parseIntSafe(getAttr(attrs, 'doors'))
+  const seats = parseIntSafe(getAttr(attrs, 'seats'))
 
   const loc = ad.location || {}
   const location = [loc.city, loc.zipcode].filter(Boolean).join(' ') || null
@@ -93,6 +97,10 @@ function adToListing(ad) {
     mileage_km,
     fuel,
     gearbox,
+    color,
+    horse_power,
+    doors,
+    seats,
     location,
     url,
     image_url,
@@ -130,9 +138,6 @@ async function scrapePage(context, url) {
   try {
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 })
     await page.waitForTimeout(1500 + Math.random() * 1500)
-    try {
-      await page.getByRole('button', { name: /accepter|accept/i }).click({ timeout: 2000 })
-    } catch {}
     try { await page.waitForLoadState('networkidle', { timeout: 10000 }) } catch {}
     await page.waitForTimeout(1000 + Math.random() * 1000)
 
@@ -182,6 +187,19 @@ async function scrape({ pages = 1, headed = false } = {}) {
 
   const all = new Map()
   try {
+    // Accept cookies once on first load before scraping
+    {
+      const cookiePage = await context.newPage()
+      try {
+        await cookiePage.goto(SEARCH_URL, { waitUntil: 'domcontentloaded', timeout: 30000 })
+        await cookiePage.waitForTimeout(2000)
+        const btn = cookiePage.getByRole('button', { name: /tout accepter|accepter|accept/i })
+        try { await btn.waitFor({ timeout: 5000 }); await btn.click() } catch {}
+        await cookiePage.waitForTimeout(1000)
+      } catch {}
+      await cookiePage.close()
+    }
+
     for (let p = 1; p <= pages; p++) {
       const url = p === 1 ? SEARCH_URL : `${SEARCH_URL}&page=${p}`
       console.log(`[leboncoin] page ${p}: ${url}`)

@@ -64,6 +64,11 @@ function vehicleToListing(v) {
 
   const title = [makeRaw, modelLabel, versionRaw].filter(Boolean).join(' ')
 
+  const color = v.color?.label || v.color || null
+  const horse_power = v.horsePower ?? v.enginePower?.value ?? null
+  const doors = v.numberOfDoors ?? v.doors ?? null
+  const seats = v.numberOfSeats ?? v.seats ?? null
+
   return {
     source: 'renew',
     external_id: productId,
@@ -76,6 +81,10 @@ function vehicleToListing(v) {
     mileage_km,
     fuel,
     gearbox,
+    color,
+    horse_power,
+    doors,
+    seats,
     location,
     url,
     image_url,

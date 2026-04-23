@@ -59,6 +59,7 @@ function parseListing(body, vid) {
   const version = versionMatch ? decodeHtml(versionMatch[1]).trim() : null
 
   let gearbox = null, fuel = null, year = null, mileage_km = null
+  let color = null, horse_power = null, doors = null, seats = null
   let pictoMatch
   PICTOCARD_RE.lastIndex = 0
   while ((pictoMatch = PICTOCARD_RE.exec(body)) !== null) {
@@ -68,6 +69,10 @@ function parseListing(body, vid) {
     else if (KM_RE.test(value)) mileage_km = parseInt_(value)
     else if (GEARBOX_WORDS.has(lower)) gearbox = value
     else if (FUEL_WORDS.has(lower)) fuel = value
+    else if (/\b(\d{2,4})\s*(?:ch|cv)\b/i.test(value)) horse_power = parseInt(value.match(/(\d{2,4})/)[1], 10)
+    else if (/(\d)\s*portes?/i.test(value)) doors = parseInt(value.match(/(\d)/)[1], 10)
+    else if (/(\d)\s*places?/i.test(value)) seats = parseInt(value.match(/(\d)/)[1], 10)
+    else if (/^(?:gris(?:e)?|blanc(?:he)?|noir(?:e)?|rouge|bleu(?:e)?|vert(?:e)?|orange|jaune|marron|beige|argent[eé]?|violet(?:te)?|rose|bordeaux|anthracite)/i.test(value)) color = value
   }
 
   let price_eur = null
@@ -90,6 +95,10 @@ function parseListing(body, vid) {
     mileage_km,
     fuel,
     gearbox,
+    color,
+    horse_power,
+    doors,
+    seats,
     location: null,
     url: listingUrl,
     image_url,

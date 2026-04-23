@@ -43,6 +43,11 @@ function itemToListing(item) {
 
   const title = item.name || `${make} ${model}`
 
+  const color = item.color || null
+  const seats = item.seatingCapacity ? parseInt(item.seatingCapacity, 10) || null : null
+  const doors = item.numberOfDoors ? parseInt(item.numberOfDoors, 10) || null : null
+  const horse_power = null
+
   return {
     source: 'lbauto',
     external_id,
@@ -55,6 +60,10 @@ function itemToListing(item) {
     mileage_km,
     fuel,
     gearbox,
+    color,
+    horse_power,
+    doors,
+    seats,
     location: null,
     url: carUrl,
     image_url,

@@ -85,6 +85,26 @@ function parseListing({ vehicleId, href, title, altText, priceText, imageUrl }) 
 
   const price_eur = parseIntSafe(priceText)
 
+  // Color: look for a bullet part that is only a color name
+  let color = null
+  const colorMatch = text.match(/\b(gris(?:e)?|blanc(?:he)?|noir(?:e)?|rouge|bleu(?:e)?|vert(?:e)?|orange|jaune|marron|beige|argent[eé]?|violet(?:te)?|rose|bordeaux|anthracite|gold|silver|white|black|blue|red|green|grey|gray|brown)\b/i)
+  if (colorMatch) color = colorMatch[1].charAt(0).toUpperCase() + colorMatch[1].slice(1).toLowerCase()
+
+  // Horse power: "XX ch" or "XX kW" pattern
+  let horse_power = null
+  const hpMatch = text.match(/(\d{2,4})\s*(?:ch|cv)\b/i)
+  if (hpMatch) horse_power = parseInt(hpMatch[1], 10)
+
+  // Doors: "X portes" pattern
+  let doors = null
+  const doorsMatch = text.match(/(\d)\s*portes?/i)
+  if (doorsMatch) doors = parseInt(doorsMatch[1], 10)
+
+  // Seats: "X places" pattern
+  let seats = null
+  const seatsMatch = text.match(/(\d)\s*places?/i)
+  if (seatsMatch) seats = parseInt(seatsMatch[1], 10)
+
   // Strip CDN proxy prefix from image URL
   let cleanImageUrl = imageUrl || null
   if (cleanImageUrl && cleanImageUrl.includes('cdn-cgi')) {
@@ -104,6 +124,10 @@ function parseListing({ vehicleId, href, title, altText, priceText, imageUrl }) 
     mileage_km,
     fuel,
     gearbox,
+    color,
+    horse_power,
+    doors,
+    seats,
     location: null,
     url: fullUrl,
     image_url: cleanImageUrl,

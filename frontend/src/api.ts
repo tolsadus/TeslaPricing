@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import type { Listing, ListingFilters, PricePoint, TrendPoint } from "./types";
+import type { Listing, ListingFilters, PricePoint, TrendPoint, DroppedListing } from "./types";
 
 const SORT_COLUMN: Record<string, string> = {
   scraped_at: "scraped_at",
@@ -45,6 +45,16 @@ export async function fetchListings(filters: ListingFilters = {}): Promise<Listi
   return (data ?? []) as Listing[];
 }
 
+export async function fetchListingsByIds(ids: number[]): Promise<Listing[]> {
+  if (ids.length === 0) return [];
+  const { data, error } = await supabase
+    .from("listings_with_delta")
+    .select("*")
+    .in("id", ids);
+  if (error) throw new Error(error.message);
+  return (data ?? []) as Listing[];
+}
+
 export async function fetchListing(id: number): Promise<Listing> {
   const { data, error } = await supabase
     .from("listings")
@@ -86,4 +96,10 @@ export async function fetchTrends(): Promise<TrendPoint[]> {
   const { data, error } = await supabase.rpc("get_trends");
   if (error) throw new Error(error.message);
   return (data ?? []) as TrendPoint[];
+}
+
+export async function fetchRecentDrops(hours = 48): Promise<DroppedListing[]> {
+  const { data, error } = await supabase.rpc("get_recent_drops", { hours });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as DroppedListing[];
 }

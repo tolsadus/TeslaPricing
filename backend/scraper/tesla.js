@@ -5,6 +5,7 @@ const createTeslaInventory = require('tesla-inventory')
 const MODELS = ['m3', 'my', 'ms', 'mx']
 const CONDITIONS = ['new', 'used']
 const MODEL_NAMES = { m3: 'Model 3', my: 'Model Y', ms: 'Model S', mx: 'Model X' }
+const CABIN_SEATS = { FIVE: 5, SEVEN: 7, SIX: 6, FOUR: 4 }
 
 const fetcher = url => fetch(url).then(res => res.text())
 const teslaInventory = createTeslaInventory(fetcher)
@@ -35,6 +36,19 @@ function parseItem(item, model, condition) {
   const odometer = item.Odometer
   const mileage_km = typeof odometer === 'number' && odometer > 0 ? Math.round(odometer) : 0
 
+  const paintOption = (item.OptionCodeData || []).find(o => o.group === 'PAINT')
+  const color = paintOption?.long_name ?? paintOption?.name ?? null
+
+  const cabinKey = (item.CABIN_CONFIG || [])[0]
+  const seats = CABIN_SEATS[cabinKey] ?? null
+
+  const location = item.City || item.InTransitMetroName || item.VrlName || item.MetroName || null
+
+  const apArr = item.AUTOPILOT || []
+  let autopilot = null
+  if (apArr.includes('FULL_SELF_DRIVING')) autopilot = 'FSD'
+  else if (apArr.includes('ENHANCED_AUTOPILOT')) autopilot = 'EAP'
+
   return {
     source: 'tesla',
     external_id: vin,
@@ -47,7 +61,12 @@ function parseItem(item, model, condition) {
     mileage_km,
     fuel: 'Électrique',
     gearbox: 'Automatique',
-    location: item.MetroName ?? null,
+    color,
+    horse_power: null,
+    doors: null,
+    seats,
+    autopilot,
+    location,
     url: listingUrl(model, vin, condition),
     image_url: compositorImage(model, item.OptionCodeList ?? null),
     _photos: (item.VehiclePhotos || []).map(p => p.imageUrl).filter(Boolean),

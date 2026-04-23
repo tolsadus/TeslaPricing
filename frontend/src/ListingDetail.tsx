@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { fetchListing, fetchPhotos, fetchPriceHistory } from "./api";
 import type { Listing, PricePoint } from "./types";
+import { getDrivetrain, DRIVETRAIN_LABEL } from "./utils";
 
 function formatPrice(v: number | null): string {
   if (v === null) return "—";
@@ -152,16 +153,30 @@ export default function ListingDetail({ id }: { id: number }) {
       <div className="detail-grid">
         <Carousel photos={photos} fallback={listing.image_url} />
         <div className="detail-info">
-          <h2>{listing.title}</h2>
+          <div>
+            <h2>{listing.title}</h2>
+            {listing.version && <p className="detail-version">{listing.version}</p>}
+          </div>
+          <div className="card-badges">
+            {(() => { const dt = (listing.drivetrain as keyof typeof DRIVETRAIN_LABEL | null) ?? getDrivetrain(listing); return dt ? <span className={`drivetrain-badge dt-${dt.toLowerCase()}`}>{DRIVETRAIN_LABEL[dt] ?? dt}</span> : null; })()}
+            {listing.autopilot && <span className={`autopilot-badge ap-${listing.autopilot.toLowerCase()}`}>{listing.autopilot}</span>}
+          </div>
           <p className="detail-price">{formatPrice(listing.price_eur)}</p>
-          <p className="meta">
-            {listing.year ?? "—"} · {formatKm(listing.mileage_km)} · {listing.fuel ?? "—"}
-          </p>
-          <p className="location">{listing.location ?? ""}</p>
+          <div className="detail-specs">
+            {listing.year && <div className="spec-item"><span className="spec-label">Year</span><span className="spec-value">{listing.year}</span></div>}
+            {listing.mileage_km && <div className="spec-item"><span className="spec-label">Mileage</span><span className="spec-value">{formatKm(listing.mileage_km)}</span></div>}
+            {listing.fuel && <div className="spec-item"><span className="spec-label">Fuel</span><span className="spec-value">{listing.fuel}</span></div>}
+            {listing.horse_power != null && <div className="spec-item"><span className="spec-label">Power</span><span className="spec-value">{listing.horse_power} ch</span></div>}
+            {listing.color && <div className="spec-item"><span className="spec-label">Color</span><span className="spec-value">{listing.color}</span></div>}
+            {listing.doors != null && <div className="spec-item"><span className="spec-label">Doors</span><span className="spec-value">{listing.doors}</span></div>}
+            {listing.seats != null && <div className="spec-item"><span className="spec-label">Seats</span><span className="spec-value">{listing.seats}</span></div>}
+            {listing.soh != null && <div className="spec-item"><span className="spec-label">Battery SoH</span><span className="spec-value">{listing.soh}%</span></div>}
+            {listing.autopilot && <div className="spec-item"><span className="spec-label">Autopilot</span><span className="spec-value">{listing.autopilot}</span></div>}
+          </div>
+          {listing.location && <p className="location">{listing.location}</p>}
+          <p className="scraped-at">Crawled {formatDate(listing.scraped_at)}</p>
           <div className="cta-row">
-            <a className="btn btn-primary" href={listing.url} target="_blank" rel="noreferrer">
-              View on {listing.source}
-            </a>
+            <a className="btn btn-primary" href={listing.url} target="_blank" rel="noreferrer">View on {listing.source}</a>
           </div>
         </div>
       </div>
@@ -171,7 +186,7 @@ export default function ListingDetail({ id }: { id: number }) {
           <h3>Price evolution</h3>
           {first !== undefined && last !== undefined && first !== last && (
             <span className={`delta ${delta < 0 ? "down" : "up"}`}>
-              {delta > 0 ? "+" : ""}{formatPrice(delta)} since first crawl
+              {delta > 0 ? "+" : ""}{formatPrice(delta)} highest ever crawl
             </span>
           )}
         </div>

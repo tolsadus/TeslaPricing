@@ -16,7 +16,36 @@ export type Listing = {
   image_url: string | null;
   scraped_at: string;
   first_price: number | null;
+  max_price: number | null;
   price_delta: number | null;
+  drivetrain: string | null;
+  soh: number | null;
+  color: string | null;
+  horse_power: number | null;
+  doors: number | null;
+  seats: number | null;
+  autopilot: string | null;
+};
+
+export type DroppedListing = {
+  id: number;
+  source: string;
+  title: string;
+  make: string | null;
+  model: string | null;
+  version: string | null;
+  drivetrain: string | null;
+  price_eur: number | null;
+  old_price: number;
+  drop_amount: number;
+  drop_pct: number;
+  year: number | null;
+  mileage_km: number | null;
+  fuel: string | null;
+  location: string | null;
+  url: string;
+  image_url: string | null;
+  dropped_at: string;
 };
 
 export type PricePoint = {

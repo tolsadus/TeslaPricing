@@ -197,10 +197,13 @@ export default function Trends() {
 
   return (
     <div className="trends-page">
-      <section className="hero">
-        <h1>Price trends</h1>
-        <p>Average listing price per model across all crawled sources</p>
-      </section>
+      <div className="page-header">
+        <div>
+          <h2 className="dropped-title">Trends</h2>
+          <p className="dropped-subtitle">Average listing price per model across all crawled sources</p>
+        </div>
+      </div>
+
 
       {loading && <p className="state">Loading…</p>}
       {error && <p className="state error">Error: {error}</p>}

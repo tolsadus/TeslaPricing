@@ -5,7 +5,13 @@ import { useEffect, useRef, useState } from "react";
 import { fetchListings, fetchStats } from "./api";
 import ListingDetail from "./ListingDetail";
 import Trends from "./Trends";
+import Dropped from "./Dropped";
+import Details from "./Details";
+import Saved from "./Saved";
+import { useSaved } from "./useSaved";
+import { useAuth } from "./useAuth";
 import type { Listing, ListingFilters, SortBy, SortDir } from "./types";
+import { getDrivetrain, DRIVETRAIN_LABEL } from "./utils";
 
 const MODELS = ["Model S", "Model 3", "Model X", "Model Y"] as const;
 
@@ -65,9 +71,12 @@ function parseListingId(hash: string): number | null {
   return m ? Number(m[1]) : null;
 }
 
-function parsePage(hash: string): "listings" | "trends" | "detail" {
+function parsePage(hash: string): "listings" | "trends" | "detail" | "dropped" | "details" | "watchlist" {
   if (hash.startsWith("#/listing/")) return "detail";
   if (hash === "#/trends") return "trends";
+  if (hash === "#/dropped") return "dropped";
+  if (hash === "#/details") return "details";
+  if (hash === "#/watchlist") return "watchlist";
   return "listings";
 }
 
@@ -120,6 +129,21 @@ function RangeSlider({
   );
 }
 
+function ScrollToTop() {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setVisible(window.scrollY > 400);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  if (!visible) return null;
+  return (
+    <button className="scroll-top-btn" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} aria-label="Back to top">
+      ↑
+    </button>
+  );
+}
+
 export default function App() {
   const hash = useHashRoute();
   const page = parsePage(hash);
@@ -140,6 +164,8 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { user, signOut } = useAuth();
+  const { toggle, isSaved, saved } = useSaved(user);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -197,10 +223,21 @@ export default function App() {
         <a className="brand" href="#">TeslaPricing</a>
         <nav className="topbar-nav">
           <a className={`nav-link ${page === "listings" || page === "detail" ? "active" : ""}`} href="#">Listings</a>
+          <a className={`nav-link ${page === "dropped" ? "active" : ""}`} href="#/dropped">Deals</a>
           <a className={`nav-link ${page === "trends" ? "active" : ""}`} href="#/trends">Trends</a>
+          <a className={`nav-link ${page === "watchlist" ? "active" : ""}`} href="#/watchlist">Watchlist {saved.size > 0 && <span className="nav-count">{saved.size}</span>}</a>
+          <a className={`nav-link ${page === "details" ? "active" : ""}`} href="#/details">Details</a>
         </nav>
         <div className="topbar-meta">
           {page === "detail" ? "Detail" : page === "trends" ? "Trends" : `${totalCount ?? "…"} inventory`}
+        </div>
+        <div className="topbar-auth">
+          {user && (
+            <>
+              {user.user_metadata?.avatar_url && <img className="auth-avatar" src={user.user_metadata.avatar_url} alt={user.user_metadata.full_name ?? "User"} referrerPolicy="no-referrer" />}
+              <button className="btn btn-secondary" onClick={signOut}>Sign out</button>
+            </>
+          )}
         </div>
       </div>
 
@@ -210,12 +247,22 @@ export default function App() {
         </div>
       ) : page === "trends" ? (
         <Trends />
+      ) : page === "dropped" ? (
+        <Dropped />
+      ) : page === "watchlist" ? (
+        <Saved />
+      ) : page === "details" ? (
+        <Details />
       ) : (
         <>
-          <section className="hero">
-            <h1>Aggregated tesla listing</h1>
-            <p>Crawls are done once a day in the morning</p>
-          </section>
+          <div className="page-hero">
+            <div className="page-header">
+              <div>
+                <h2 className="dropped-title">Listings</h2>
+                <p className="dropped-subtitle">{totalCount ?? "…"} cars from all sources · crawled once a day</p>
+              </div>
+            </div>
+          </div>
 
           <div className="content-area">
             {/* ── Left sidebar ── */}
@@ -298,15 +345,20 @@ export default function App() {
               <ul className="grid">
                 {listings.map((listing) => (
                   <li key={listing.id} className="card">
-                    {listing.image_url && <img src={listing.image_url} alt={listing.title} referrerPolicy="no-referrer" />}
+                    <div className="card-img-wrap">
+                      {listing.image_url && <img src={listing.image_url} alt={listing.title} referrerPolicy="no-referrer" />}
+                      <button className={`bookmark-btn${isSaved(listing.id) ? " active" : ""}`} onClick={() => toggle(listing.id)} aria-label="Save listing">🔖</button>
+                    </div>
                     <div className="card-body">
                       <h3>{listing.title}</h3>
+                      <div className="card-badges">
+                        {(() => { const dt = (listing.drivetrain as keyof typeof DRIVETRAIN_LABEL | null) ?? getDrivetrain(listing); return dt ? <span className={`drivetrain-badge dt-${dt.toLowerCase()}`}>{DRIVETRAIN_LABEL[dt] ?? dt}</span> : null; })()}
+                        {listing.autopilot && <span className={`autopilot-badge ap-${listing.autopilot.toLowerCase()}`}>{listing.autopilot}</span>}
+                      </div>
                       <div className="price-row">
                         <p className="price">{formatPrice(listing.price_eur)}</p>
-                        {listing.price_delta !== null && listing.price_delta !== 0 && listing.first_price !== null && (
-                          <span className={`price-delta ${listing.price_delta < 0 ? "delta-down" : "delta-up"}`}>
-                            <s>{formatPrice(listing.first_price)}</s>
-                          </span>
+                        {listing.max_price !== null && listing.price_eur !== null && listing.max_price > listing.price_eur && (
+                          <span className="price-delta delta-down"><s>{formatPrice(listing.max_price)}</s></span>
                         )}
                       </div>
                       <p className="meta">
@@ -331,7 +383,9 @@ export default function App() {
         </>
       )}
 
+      <ScrollToTop />
       <div className="version-badge">
+        {totalCount != null && <><span>{totalCount} cars</span><span className="version-badge-sep">·</span></>}
         {__GIT_BRANCH__}@{__GIT_COMMIT__}
       </div>
     </div>

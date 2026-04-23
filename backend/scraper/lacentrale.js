@@ -58,11 +58,16 @@ async function extractFromDom(page) {
           .filter(Boolean)
 
         let year = null, mileage_km = null, fuel = null, gearbox = null
+        let color = null, horse_power = null, doors = null, seats = null
         for (const c of chars) {
           if (/^\d{4}$/.test(c)) { year = parseInt(c, 10); continue }
           if (/km/i.test(c)) { mileage_km = parseInt(c.replace(/[^\d]/g, ''), 10) || null; continue }
           if (/électrique|diesel|essence|hybride|gpl|hydrogène/i.test(c)) { fuel = c; continue }
           if (/auto|manuelle|automatique/i.test(c)) { gearbox = c; continue }
+          if (/\bch\b|\bcv\b/i.test(c)) { const n = parseInt(c.replace(/[^\d]/g, ''), 10); if (n) horse_power = n; continue }
+          if (/portes?/i.test(c)) { const n = parseInt(c.replace(/[^\d]/g, ''), 10); if (n) doors = n; continue }
+          if (/places?/i.test(c)) { const n = parseInt(c.replace(/[^\d]/g, ''), 10); if (n) seats = n; continue }
+          if (/^(?:gris|blanc|noir|rouge|bleu|vert|orange|jaune|marron|beige|argent|violet|rose|bordeaux|anthracite|grise|bleue|verte|blanche|noire|rouge|dorée?|dorée?|gold|silver|white|black|blue|red|green|grey|gray|brown)/i.test(c)) { color = c; continue }
         }
 
         // Price: text inside the price container, strip non-numeric except space
@@ -78,7 +83,7 @@ async function extractFromDom(page) {
         const locationEl = card.querySelector('[class*="sellerLocation"], [class*="location"], [class*="city"]')
         const location = locationEl?.textContent?.trim() || null
 
-        results.push({ ref, url, title, version, year, mileage_km, fuel, gearbox, price_eur, image_url, location })
+        results.push({ ref, url, title, version, year, mileage_km, fuel, gearbox, price_eur, image_url, location, color, horse_power, doors, seats })
       } catch {}
     }
     return results
@@ -106,6 +111,10 @@ async function extractFromDom(page) {
       mileage_km: r.mileage_km || null,
       fuel: r.fuel || null,
       gearbox: r.gearbox || null,
+      color: r.color || null,
+      horse_power: r.horse_power || null,
+      doors: r.doors || null,
+      seats: r.seats || null,
       location: r.location || null,
       url: r.url || `${BASE_URL}/auto-occasion-annonce-${r.ref}.html`,
       image_url: r.image_url || null,
