@@ -6,6 +6,7 @@ const SORT_COLUMN: Record<string, string> = {
   mileage_km: "mileage_km",
   year: "year",
   price: "price_eur",
+  price_delta: "price_delta",
 };
 
 export async function fetchListings(filters: ListingFilters = {}): Promise<Listing[]> {
@@ -26,7 +27,7 @@ export async function fetchListings(filters: ListingFilters = {}): Promise<Listi
   const ascending = sort_dir === "asc";
 
   let query = supabase
-    .from("listings")
+    .from("listings_with_delta")
     .select("*")
     .order(column, { ascending, nullsFirst: false })
     .order("id", { ascending: false })

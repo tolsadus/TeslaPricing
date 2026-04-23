@@ -326,12 +326,35 @@ html, body {
   line-height: 1.35;
   color: var(--text);
 }
+.price-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
 .price {
   font-size: 1.4rem;
   font-weight: 600;
   color: var(--text);
   margin: 0.15rem 0 0.35rem;
   letter-spacing: -0.01em;
+}
+.price-delta {
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  margin-bottom: 0.25rem;
+}
+.delta-down {
+  background: #d1fae5;
+  color: #065f46;
+}
+.delta-up {
+  background: #fee2e2;
+  color: #991b1b;
 }
 .meta {
   color: var(--text-dim);

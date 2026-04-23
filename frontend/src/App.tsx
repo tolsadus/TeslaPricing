@@ -17,6 +17,7 @@ const SORT_OPTIONS: { label: string; sort_by: SortBy; sort_dir: SortDir }[] = [
   { label: "Mileage ↓", sort_by: "mileage_km", sort_dir: "desc" },
   { label: "Year (newest)", sort_by: "year", sort_dir: "desc" },
   { label: "Year (oldest)", sort_by: "year", sort_dir: "asc" },
+  { label: "Biggest drop", sort_by: "price_delta", sort_dir: "asc" },
 ];
 
 const PRICE_MIN = 0;
@@ -300,7 +301,14 @@ export default function App() {
                     {listing.image_url && <img src={listing.image_url} alt={listing.title} referrerPolicy="no-referrer" />}
                     <div className="card-body">
                       <h3>{listing.title}</h3>
-                      <p className="price">{formatPrice(listing.price_eur)}</p>
+                      <div className="price-row">
+                        <p className="price">{formatPrice(listing.price_eur)}</p>
+                        {listing.price_delta !== null && listing.price_delta !== 0 && listing.first_price !== null && (
+                          <span className={`price-delta ${listing.price_delta < 0 ? "delta-down" : "delta-up"}`}>
+                            <s>{formatPrice(listing.first_price)}</s>
+                          </span>
+                        )}
+                      </div>
                       <p className="meta">
                         {listing.year ?? "—"} · {formatKm(listing.mileage_km)} · {listing.fuel ?? "—"}
                       </p>

@@ -15,6 +15,8 @@ export type Listing = {
   url: string;
   image_url: string | null;
   scraped_at: string;
+  first_price: number | null;
+  price_delta: number | null;
 };
 
 export type PricePoint = {
@@ -22,7 +24,7 @@ export type PricePoint = {
   recorded_at: string;
 };
 
-export type SortBy = "scraped_at" | "mileage_km" | "year" | "price";
+export type SortBy = "scraped_at" | "mileage_km" | "year" | "price" | "price_delta";
 export type SortDir = "asc" | "desc";
 
 export type TrendPoint = {

@@ -3,7 +3,7 @@
 const BASE_URL = 'https://www.lb-automobiles.com'
 const SEARCH_URL = `${BASE_URL}/recherche-import?brand=49`
 
-const USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+const { USER_AGENT } = require('./constants')
 
 function canonicalModel(text) {
   if (/model[\s-]*x/i.test(text)) return 'Model X'

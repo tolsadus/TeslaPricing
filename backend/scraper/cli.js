@@ -93,6 +93,26 @@ program
     await pool.end()
   })
 
+program
+  .command('lacentrale')
+  .description('Scrape La Centrale Tesla listings via Playwright')
+  .option('--pages <n>', 'number of pages', v => parseInt(v, 10), 1)
+  .option('--headed', 'open a browser window (needed to solve captcha on first run)')
+  .option('--login', 'open browser to log in and save session, then exit')
+  .option('--debug', 'dump raw captured payloads to ~/.teslapricing/debug/ for inspection')
+  .action(async ({ pages, headed, login, debug }) => {
+    const lacentrale = require('./lacentrale')
+    if (login) {
+      await lacentrale.login()
+      await pool.end()
+      return
+    }
+    const listings = await lacentrale.scrape({ pages, headed, debug })
+    const n = await upsert(listings)
+    console.log(`\nDone. Upserted ${n} listings.`)
+    await pool.end()
+  })
+
 program.parseAsync(process.argv).catch(err => {
   console.error(err)
   process.exit(1)

@@ -3,7 +3,7 @@
 const BASE_URL = 'https://www.gmecars.fr'
 const SEARCH_URL = `${BASE_URL}/149/vehicules/?marque=94&photos=1`
 
-const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36'
+const { USER_AGENT } = require('./constants')
 
 const GEARBOX_WORDS = new Set(['automatique', 'automatisee', 'automatisée', 'manuelle', 'sequentielle', 'séquentielle'])
 const FUEL_WORDS = new Set(['electrique', 'électrique', 'essence', 'diesel', 'hybride', 'hybride essence', 'hybride diesel', 'hybride rechargeable', 'gpl', 'e85', 'ethanol', 'éthanol', 'hydrogene', 'hydrogène'])
