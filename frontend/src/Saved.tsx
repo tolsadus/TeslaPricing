@@ -19,7 +19,7 @@ function formatDate(iso: string): string {
   return new Intl.DateTimeFormat("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(iso));
 }
 
-export default function Saved({ onSignIn }: { onSignIn?: () => void }) {
+export default function Saved() {
   const { user } = useAuth();
   const { saved, toggle } = useSaved(user);
   const [listings, setListings] = useState<Listing[]>([]);

@@ -164,7 +164,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { user, signOut, signInWithGoogle, signInWithGithub, signInWithTwitter } = useAuth();
+  const { user, signOut, signInWithGoogle, signInWithGithub } = useAuth();
   const [showAuthMenu, setShowAuthMenu] = useState(false);
   const { toggle, isSaved, saved } = useSaved(user);
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -253,7 +253,7 @@ export default function App() {
       ) : page === "dropped" ? (
         <Dropped />
       ) : page === "watchlist" ? (
-        <Saved onSignIn={() => setShowAuthMenu(true)} />
+        <Saved />
       ) : page === "details" ? (
         <Details />
       ) : (
