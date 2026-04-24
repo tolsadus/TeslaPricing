@@ -144,9 +144,9 @@ export default function ListingDetail({ id, isSaved, onToggle }: { id: number; i
   if (!listing) return <p className="state">{t("loading")}</p>;
 
   const prices = history.map((h) => h.price_eur).filter((p): p is number => p !== null);
-  const first = prices[0];
   const last = prices[prices.length - 1];
-  const delta = first !== undefined && last !== undefined ? last - first : 0;
+  const maxPrice = prices.length > 0 ? Math.max(...prices) : null;
+  const delta = last !== undefined && maxPrice !== null && maxPrice !== last ? last - maxPrice : null;
 
   return (
     <div className="detail">
@@ -191,7 +191,7 @@ export default function ListingDetail({ id, isSaved, onToggle }: { id: number; i
       <section className="chart-section">
         <div className="chart-head">
           <h3>{t("price_history")}</h3>
-          {first !== undefined && last !== undefined && first !== last && (
+          {delta !== null && (
             <span className={`delta ${delta < 0 ? "down" : "up"}`}>
               {delta > 0 ? "+" : ""}{formatPrice(delta)} {t("price_highest")}
             </span>
