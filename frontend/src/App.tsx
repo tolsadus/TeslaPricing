@@ -27,14 +27,6 @@ const SORT_OPTIONS: { label: string; sort_by: SortBy; sort_dir: SortDir }[] = [
   { label: "Biggest drop", sort_by: "price_delta", sort_dir: "asc" },
 ];
 
-const PRICE_MIN = 0;
-const PRICE_MAX = 150_000;
-const PRICE_STEP = 1_000;
-const YEAR_MIN = 2012;
-const YEAR_MAX = new Date().getFullYear();
-const MILEAGE_MIN = 0;
-const MILEAGE_MAX = 200_000;
-const MILEAGE_STEP = 5_000;
 
 const DRIVETRAINS = ["RWD", "AWD", "Performance", "Plaid"] as const;
 const AUTOPILOTS = ["EAP", "FSD"] as const;
@@ -52,6 +44,7 @@ function formatPrice(v: number | null): string {
 
 function formatKm(v: number | null): string {
   if (v === null) return "—";
+  if (v <= 100) return "Neuf";
   return `${new Intl.NumberFormat("fr-FR").format(v)} km`;
 }
 
@@ -89,60 +82,56 @@ function parsePage(hash: string): "listings" | "trends" | "detail" | "dropped" |
   return "listings";
 }
 
-function RangeSlider({
-  label,
-  min,
-  max,
-  step,
-  valueMin,
-  valueMax,
-  formatValue,
-  onChange,
-}: {
+function RangeInputs({ label, minVal, maxVal, unit, disabled, onChangeMin, onChangeMax }: {
   label: string;
-  min: number;
-  max: number;
-  step: number;
-  valueMin: number;
-  valueMax: number;
-  formatValue: (v: number, which: "min" | "max") => string;
-  onChange: (min: number, max: number) => void;
+  minVal?: number;
+  maxVal?: number;
+  unit?: string;
+  disabled?: boolean;
+  onChangeMin: (v: number | undefined) => void;
+  onChangeMax: (v: number | undefined) => void;
 }) {
-  const pctMin = ((valueMin - min) / (max - min)) * 100;
-  const pctMax = ((valueMax - min) / (max - min)) * 100;
+  const [localMin, setLocalMin] = useState(minVal !== undefined ? String(minVal) : "");
+  const [localMax, setLocalMax] = useState(maxVal !== undefined ? String(maxVal) : "");
+
+  useEffect(() => { setLocalMin(minVal !== undefined ? String(minVal) : ""); }, [minVal]);
+  useEffect(() => { setLocalMax(maxVal !== undefined ? String(maxVal) : ""); }, [maxVal]);
 
   return (
-    <div className="slider-group">
-      <div className="slider-label">
-        <span>{label}</span>
-        <span className="slider-values">
-          {formatValue(valueMin, "min")} – {formatValue(valueMax, "max")}
-        </span>
-      </div>
-      <div className="slider-track-wrap">
-        <div className="slider-fill" style={{ left: `${pctMin}%`, width: `${pctMax - pctMin}%` }} />
-        <input
-          type="range"
-          className="slider-input slider-lower"
-          min={min} max={max} step={step} value={valueMin}
-          onChange={(e) => onChange(Math.min(Number(e.target.value), valueMax - step), valueMax)}
-        />
-        <input
-          type="range"
-          className="slider-input slider-upper"
-          min={min} max={max} step={step} value={valueMax}
-          onChange={(e) => onChange(valueMin, Math.max(Number(e.target.value), valueMin + step))}
-        />
+    <div className="range-inputs-group">
+      <span className="range-inputs-label">{label}{unit && <span className="range-inputs-unit">{unit}</span>}</span>
+      <div className="range-inputs-row">
+        <input type="number" className="range-input" placeholder="Min" disabled={disabled}
+          value={localMin} onChange={e => setLocalMin(e.target.value)}
+          onBlur={e => onChangeMin(e.target.value !== "" ? Number(e.target.value) : undefined)} />
+        <span className="range-inputs-sep">–</span>
+        <input type="number" className="range-input" placeholder="Max" disabled={disabled}
+          value={localMax} onChange={e => setLocalMax(e.target.value)}
+          onBlur={e => onChangeMax(e.target.value !== "" ? Number(e.target.value) : undefined)} />
       </div>
     </div>
   );
 }
 
+const sidebarSectionPrefs: Record<string, boolean> = (() => {
+  try { return JSON.parse(localStorage.getItem("sidebarSections") ?? "{}"); } catch { return {}; }
+})();
+
 function SidebarSection({ label, children, defaultOpen = false }: { label: string; children: React.ReactNode; defaultOpen?: boolean }) {
-  const [open, setOpen] = useState(defaultOpen);
+  const [open, setOpen] = useState(() => sidebarSectionPrefs[label] ?? defaultOpen);
+
+  function toggle() {
+    setOpen(o => {
+      const next = !o;
+      sidebarSectionPrefs[label] = next;
+      localStorage.setItem("sidebarSections", JSON.stringify(sidebarSectionPrefs));
+      return next;
+    });
+  }
+
   return (
     <div className="sidebar-section">
-      <button type="button" className="sidebar-heading-btn" onClick={() => setOpen(o => !o)}>
+      <button type="button" className="sidebar-heading-btn" onClick={toggle}>
         <span>{label}</span>
         <span className={`sidebar-arrow ${open ? "open" : ""}`}>▾</span>
       </button>
@@ -184,27 +173,6 @@ export default function App() {
     } catch {}
     return { sort_by: "scraped_at", sort_dir: "desc", limit: LIMIT };
   });
-  const [priceRange, setPriceRange] = useState<[number, number]>(() => {
-    try {
-      const saved = localStorage.getItem("priceRange");
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return [PRICE_MIN, PRICE_MAX];
-  });
-  const [yearRange, setYearRange] = useState<[number, number]>(() => {
-    try {
-      const saved = localStorage.getItem("yearRange");
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return [YEAR_MIN, YEAR_MAX];
-  });
-  const [mileageRange, setMileageRange] = useState<[number, number]>(() => {
-    try {
-      const saved = localStorage.getItem("mileageRange");
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return [MILEAGE_MIN, MILEAGE_MAX];
-  });
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -214,31 +182,11 @@ export default function App() {
   const [showAuthMenu, setShowAuthMenu] = useState(false);
   const { toggle, isSaved, saved } = useSaved(user);
   const sentinelRef = useRef<HTMLDivElement>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  function applySliders(price: [number, number], year: [number, number], mileage: [number, number]) {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      setFilters((f) => ({
-        ...f,
-        min_price: price[0] > PRICE_MIN ? price[0] : undefined,
-        max_price: price[1] < PRICE_MAX ? price[1] : undefined,
-        min_year: year[0] > YEAR_MIN ? year[0] : undefined,
-        max_year: year[1] < YEAR_MAX ? year[1] : undefined,
-        min_mileage: mileage[0] > MILEAGE_MIN ? mileage[0] : undefined,
-        max_mileage: mileage[1] < MILEAGE_MAX ? mileage[1] : undefined,
-      }));
-    }, 300);
-  }
 
   useEffect(() => {
     const { limit: _, ...toSave } = filters;
     localStorage.setItem("filters", JSON.stringify(toSave));
   }, [filters]);
-
-  useEffect(() => { localStorage.setItem("priceRange", JSON.stringify(priceRange)); }, [priceRange]);
-  useEffect(() => { localStorage.setItem("yearRange", JSON.stringify(yearRange)); }, [yearRange]);
-  useEffect(() => { localStorage.setItem("mileageRange", JSON.stringify(mileageRange)); }, [mileageRange]);
 
   useEffect(() => {
     fetchStats().then((s) => setTotalCount(s.total)).catch(() => {});
@@ -341,12 +289,7 @@ export default function App() {
                 <button
                   type="button"
                   className="reset-filters-btn"
-                  onClick={() => {
-                    setFilters({ sort_by: "scraped_at", sort_dir: "desc", limit: LIMIT });
-                    setPriceRange([PRICE_MIN, PRICE_MAX]);
-                    setYearRange([YEAR_MIN, YEAR_MAX]);
-                    setMileageRange([MILEAGE_MIN, MILEAGE_MAX]);
-                  }}
+                  onClick={() => setFilters({ sort_by: "scraped_at", sort_dir: "desc", limit: LIMIT })}
                 >
                   Reset filters
                 </button>
@@ -459,37 +402,30 @@ export default function App() {
               </SidebarSection>
 
               <SidebarSection label="Filters">
-                <RangeSlider
-                  label="Price"
-                  min={PRICE_MIN} max={PRICE_MAX} step={PRICE_STEP}
-                  valueMin={priceRange[0]} valueMax={priceRange[1]}
-                  formatValue={(v, which) =>
-                    which === "max" && v === PRICE_MAX
-                      ? "Any"
-                      : new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(v)
-                  }
-                  onChange={(lo, hi) => { setPriceRange([lo, hi]); applySliders([lo, hi], yearRange, mileageRange); }}
+                <RangeInputs label="Price" unit="€"
+                  minVal={filters.min_price} maxVal={filters.max_price}
+                  onChangeMin={v => setFilters(f => ({ ...f, min_price: v }))}
+                  onChangeMax={v => setFilters(f => ({ ...f, max_price: v }))}
                 />
-                <RangeSlider
-                  label="Year"
-                  min={YEAR_MIN} max={YEAR_MAX} step={1}
-                  valueMin={yearRange[0]} valueMax={yearRange[1]}
-                  formatValue={(v, which) =>
-                    which === "min" && v === YEAR_MIN ? "Any" : String(v)
-                  }
-                  onChange={(lo, hi) => { setYearRange([lo, hi]); applySliders(priceRange, [lo, hi], mileageRange); }}
+                <RangeInputs label="Year"
+                  minVal={filters.min_year} maxVal={filters.max_year}
+                  onChangeMin={v => setFilters(f => ({ ...f, min_year: v }))}
+                  onChangeMax={v => setFilters(f => ({ ...f, max_year: v }))}
                 />
-                <RangeSlider
-                  label="Mileage"
-                  min={MILEAGE_MIN} max={MILEAGE_MAX} step={MILEAGE_STEP}
-                  valueMin={mileageRange[0]} valueMax={mileageRange[1]}
-                  formatValue={(v, which) =>
-                    which === "max" && v === MILEAGE_MAX
-                      ? "Any"
-                      : `${new Intl.NumberFormat("fr-FR").format(v)} km`
-                  }
-                  onChange={(lo, hi) => { setMileageRange([lo, hi]); applySliders(priceRange, yearRange, [lo, hi]); }}
+                <RangeInputs label="Mileage" unit="km"
+                  minVal={filters.min_mileage} maxVal={filters.max_mileage}
+                  disabled={filters.new_only}
+                  onChangeMin={v => setFilters(f => ({ ...f, min_mileage: v }))}
+                  onChangeMax={v => setFilters(f => ({ ...f, max_mileage: v }))}
                 />
+                <button
+                  type="button"
+                  className={`new-only-btn ${filters.new_only ? "active" : ""}`}
+                  onClick={() => setFilters(f => ({ ...f, new_only: !f.new_only, min_mileage: undefined, max_mileage: undefined }))}
+                >
+                  <span className="new-only-track"><span className="new-only-thumb" /></span>
+                  New &lt;100 km
+                </button>
               </SidebarSection>
             </aside>
 

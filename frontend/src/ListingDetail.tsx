@@ -164,7 +164,7 @@ export default function ListingDetail({ id, isSaved, onToggle }: { id: number; i
           <p className="detail-price">{formatPrice(listing.price_eur)}</p>
           <div className="detail-specs">
             {listing.year && <div className="spec-item"><span className="spec-label">Year</span><span className="spec-value">{listing.year}</span></div>}
-            {listing.mileage_km && <div className="spec-item"><span className="spec-label">Mileage</span><span className="spec-value">{formatKm(listing.mileage_km)}</span></div>}
+            {listing.mileage_km != null && <div className="spec-item"><span className="spec-label">Mileage</span><span className="spec-value">{listing.mileage_km <= 100 ? "Neuf" : formatKm(listing.mileage_km)}</span></div>}
             {listing.fuel && <div className="spec-item"><span className="spec-label">Fuel</span><span className="spec-value">{listing.fuel}</span></div>}
             {listing.horse_power != null && <div className="spec-item"><span className="spec-label">Power</span><span className="spec-value">{listing.horse_power} ch</span></div>}
             {listing.color && <div className="spec-item"><span className="spec-label">Color</span><span className="spec-value">{listing.color}</span></div>}

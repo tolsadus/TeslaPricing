@@ -77,6 +77,7 @@ export type ListingFilters = {
   max_year?: number;
   min_mileage?: number;
   max_mileage?: number;
+  new_only?: boolean;
   source?: string;
   sort_by?: SortBy;
   sort_dir?: SortDir;

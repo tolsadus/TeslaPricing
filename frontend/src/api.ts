@@ -28,8 +28,11 @@ function applyFilters<T>(query: T, filters: ListingFilters): T {
   if (filters.max_price !== undefined) q = q.lte("price_eur", filters.max_price);
   if (filters.min_year !== undefined) q = q.gte("year", filters.min_year);
   if (filters.max_year !== undefined) q = q.lte("year", filters.max_year);
-  if (filters.min_mileage !== undefined) q = q.gte("mileage_km", filters.min_mileage);
-  if (filters.max_mileage !== undefined) q = q.lte("mileage_km", filters.max_mileage);
+  if (filters.new_only) q = q.lte("mileage_km", 100);
+  else {
+    if (filters.min_mileage !== undefined) q = q.gte("mileage_km", filters.min_mileage);
+    if (filters.max_mileage !== undefined) q = q.lte("mileage_km", filters.max_mileage);
+  }
   if (filters.source) q = q.eq("source", filters.source);
   return q as T;
 }
