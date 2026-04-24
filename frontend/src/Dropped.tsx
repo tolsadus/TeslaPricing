@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { fetchRecentDrops } from "./api";
 import type { DroppedListing } from "./types";
 import { getDrivetrain, DRIVETRAIN_LABEL } from "./utils";
+import { useTranslation } from "./i18n";
 
 function formatPrice(v: number | null): string {
   if (v === null) return "—";
@@ -17,16 +18,17 @@ function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" });
 }
 
-const WINDOWS = [
-  { label: "24h", hours: 24 },
-  { label: "48h", hours: 48 },
-  { label: "7 days", hours: 168 },
-];
-
 export default function Dropped() {
+  const { t } = useTranslation();
   const [drops, setDrops] = useState<DroppedListing[]>([]);
   const [hours, setHours] = useState(48);
   const [loading, setLoading] = useState(true);
+
+  const WINDOWS = [
+    { label: t("dropped_24h"), hours: 24 },
+    { label: t("dropped_48h"), hours: 48 },
+    { label: t("dropped_7d"), hours: 168 },
+  ];
 
   useEffect(() => {
     setLoading(true);
@@ -39,8 +41,8 @@ export default function Dropped() {
     <div className="dropped-page">
       <div className="dropped-header">
         <div>
-          <h2 className="dropped-title">Price drops</h2>
-          <p className="dropped-subtitle">Listings whose price decreased recently, sorted by biggest drop first.</p>
+          <h2 className="dropped-title">{t("dropped_title")}</h2>
+          <p className="dropped-subtitle">{t("dropped_subtitle")}</p>
         </div>
         <div className="dropped-window-tabs">
           {WINDOWS.map((w) => (
@@ -55,9 +57,9 @@ export default function Dropped() {
         </div>
       </div>
 
-      {loading && <p className="state">Loading…</p>}
+      {loading && <p className="state">{t("loading")}</p>}
       {!loading && drops.length === 0 && (
-        <p className="state">No price drops in the last {hours}h. Run the scrapers to check for updates.</p>
+        <p className="state">{t("dropped_empty", { hours })}</p>
       )}
 
       {!loading && drops.length > 0 && (() => {
@@ -89,9 +91,9 @@ export default function Dropped() {
                 </div>
                 <p className="meta">{d.year ?? "—"} · {formatKm(d.mileage_km)} · {d.fuel ?? "—"}</p>
                 <p className="location">{d.location ?? ""}</p>
-                <p className="scraped-at">Dropped {formatDate(d.dropped_at)}</p>
+                <p className="scraped-at">{t("dropped_label")} {formatDate(d.dropped_at)}</p>
                 <div className="cta-row">
-                  <a className="btn btn-primary" href={`#/listing/${d.id}`}>View</a>
+                  <a className="btn btn-primary" href={`#/listing/${d.id}`}>{t("dropped_view")}</a>
                   <span className="btn btn-secondary">{d.source}</span>
                 </div>
               </div>
@@ -101,13 +103,13 @@ export default function Dropped() {
 
         return (
           <>
-            <p className="dropped-section-label">Top drops</p>
+            <p className="dropped-section-label">{t("dropped_top")}</p>
             <ul className="dropped-podium">
               {top.map((d, i) => renderCard(d, i))}
             </ul>
             {rest.length > 0 && (
               <>
-                <p className="dropped-section-label">Others</p>
+                <p className="dropped-section-label">{t("dropped_others")}</p>
                 <ul className="dropped-grid">
                   {rest.map((d) => renderCard(d))}
                 </ul>

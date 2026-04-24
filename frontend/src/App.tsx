@@ -10,22 +10,13 @@ import Details from "./Details";
 import Saved from "./Saved";
 import { useSaved } from "./useSaved";
 import { useAuth } from "./useAuth";
-import type { Listing, ListingFilters, SortBy, SortDir } from "./types";
+import { useTranslation } from "./i18n";
+import type { Listing, ListingFilters } from "./types";
 import { getDrivetrain, DRIVETRAIN_LABEL } from "./utils";
 
 const MODELS = ["Model S", "Model 3", "Model X", "Model Y"] as const;
 const SOURCES = ["tesla", "leboncoin", "lacentrale", "capcar", "lbauto", "aramisauto", "gmecars", "renew"] as const;
 
-const SORT_OPTIONS: { label: string; sort_by: SortBy; sort_dir: SortDir }[] = [
-  { label: "Latest crawl", sort_by: "scraped_at", sort_dir: "desc" },
-  { label: "Price ↑", sort_by: "price", sort_dir: "asc" },
-  { label: "Price ↓", sort_by: "price", sort_dir: "desc" },
-  { label: "Mileage ↑", sort_by: "mileage_km", sort_dir: "asc" },
-  { label: "Mileage ↓", sort_by: "mileage_km", sort_dir: "desc" },
-  { label: "Year (newest)", sort_by: "year", sort_dir: "desc" },
-  { label: "Year (oldest)", sort_by: "year", sort_dir: "asc" },
-  { label: "Biggest drop", sort_by: "price_delta", sort_dir: "asc" },
-];
 
 
 const DRIVETRAINS = ["RWD", "AWD", "Performance", "Plaid"] as const;
@@ -42,9 +33,9 @@ function formatPrice(v: number | null): string {
   return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(v);
 }
 
-function formatKm(v: number | null): string {
+function formatKm(v: number | null, newLabel = "New"): string {
   if (v === null) return "—";
-  if (v <= 100) return "Neuf";
+  if (v <= 100) return newLabel;
   return `${new Intl.NumberFormat("fr-FR").format(v)} km`;
 }
 
@@ -117,7 +108,7 @@ const sidebarSectionPrefs: Record<string, boolean> = (() => {
   try { return JSON.parse(localStorage.getItem("sidebarSections") ?? "{}"); } catch { return {}; }
 })();
 
-function SidebarSection({ label, children, defaultOpen = false }: { label: string; children: React.ReactNode; defaultOpen?: boolean }) {
+function SidebarSection({ label, title, children, defaultOpen = false }: { label: string; title?: string; children: React.ReactNode; defaultOpen?: boolean }) {
   const [open, setOpen] = useState(() => sidebarSectionPrefs[label] ?? defaultOpen);
 
   function toggle() {
@@ -132,7 +123,7 @@ function SidebarSection({ label, children, defaultOpen = false }: { label: strin
   return (
     <div className="sidebar-section">
       <button type="button" className="sidebar-heading-btn" onClick={toggle}>
-        <span>{label}</span>
+        <span>{title ?? label}</span>
         <span className={`sidebar-arrow ${open ? "open" : ""}`}>▾</span>
       </button>
       <div className={`sidebar-body-wrap ${open ? "open" : ""}`}>
@@ -158,14 +149,27 @@ function ScrollToTop() {
 }
 
 export default function App() {
+  const { t, lang, setLang } = useTranslation();
   const hash = useHashRoute();
   const page = parsePage(hash);
   const detailId = parseListingId(hash);
 
   const LIMIT = 50;
+
+  const SORT_OPTIONS = [
+    { label: t("sort_latest"),      sort_by: "scraped_at" as const, sort_dir: "desc" as const },
+    { label: t("sort_price_asc"),   sort_by: "price"      as const, sort_dir: "asc"  as const },
+    { label: t("sort_price_desc"),  sort_by: "price"      as const, sort_dir: "desc" as const },
+    { label: t("sort_mileage_asc"), sort_by: "mileage_km" as const, sort_dir: "asc"  as const },
+    { label: t("sort_mileage_desc"),sort_by: "mileage_km" as const, sort_dir: "desc" as const },
+    { label: t("sort_year_newest"), sort_by: "year"       as const, sort_dir: "desc" as const },
+    { label: t("sort_year_oldest"), sort_by: "year"       as const, sort_dir: "asc"  as const },
+    { label: t("sort_biggest_drop"),sort_by: "price_delta"as const, sort_dir: "asc"  as const },
+  ];
   const [totalCount, setTotalCount] = useState<number | null>(null);
   const [filteredCount, setFilteredCount] = useState<number | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
+  const [sectionResetKey, setSectionResetKey] = useState(0);
   const [filters, setFilters] = useState<ListingFilters>(() => {
     try {
       const saved = localStorage.getItem("filters");
@@ -233,23 +237,27 @@ export default function App() {
       <div className="topbar">
         <a className="brand" href="#">TeslaPricing</a>
         <nav className="topbar-nav">
-          <a className={`nav-link ${page === "listings" || page === "detail" ? "active" : ""}`} href="#">Listings</a>
-          <a className={`nav-link ${page === "dropped" ? "active" : ""}`} href="#/dropped">Deals</a>
-          <a className={`nav-link ${page === "trends" ? "active" : ""}`} href="#/trends">Trends</a>
-          <a className={`nav-link ${page === "watchlist" ? "active" : ""}`} href="#/watchlist">Watchlist {saved.size > 0 && <span className="nav-count">{saved.size}</span>}</a>
-          <a className={`nav-link ${page === "details" ? "active" : ""}`} href="#/details">Details</a>
+          <a className={`nav-link ${page === "listings" || page === "detail" ? "active" : ""}`} href="#">{t("nav_listings")}</a>
+          <a className={`nav-link ${page === "dropped" ? "active" : ""}`} href="#/dropped">{t("nav_deals")}</a>
+          <a className={`nav-link ${page === "trends" ? "active" : ""}`} href="#/trends">{t("nav_trends")}</a>
+          <a className={`nav-link ${page === "watchlist" ? "active" : ""}`} href="#/watchlist">{t("nav_watchlist")} {saved.size > 0 && <span className="nav-count">{saved.size}</span>}</a>
+          <a className={`nav-link ${page === "details" ? "active" : ""}`} href="#/details">{t("nav_details")}</a>
         </nav>
         <div className="topbar-meta">
-          {page === "detail" ? "Detail" : page === "trends" ? "Trends" : `${totalCount ?? "…"} inventory`}
+          {page === "detail" ? t("nav_listings") : page === "trends" ? t("nav_trends") : `${totalCount ?? "…"} ${t("nav_inventory")}`}
         </div>
         <div className="topbar-auth">
+          <div className="lang-toggle">
+            <button className={lang === "en" ? "active" : ""} onClick={() => setLang("en")} title="English">🇬🇧</button>
+            <button className={lang === "fr" ? "active" : ""} onClick={() => setLang("fr")} title="Français">🇫🇷</button>
+          </div>
           {user ? (
             <>
               {user.user_metadata?.avatar_url && <img className="auth-avatar" src={user.user_metadata.avatar_url} alt={user.user_metadata.full_name ?? "User"} referrerPolicy="no-referrer" />}
-              <button className="btn btn-secondary" onClick={signOut}>Sign out</button>
+              <button className="btn btn-secondary" onClick={signOut}>{t("sign_out")}</button>
             </>
           ) : (
-            <button className="btn btn-primary" onClick={() => setShowAuthMenu(true)}>Sign in</button>
+            <button className="btn btn-primary" onClick={() => setShowAuthMenu(true)}>{t("sign_in")}</button>
           )}
         </div>
       </div>
@@ -271,11 +279,11 @@ export default function App() {
           <div className="page-hero">
             <div className="page-header">
               <div>
-                <h2 className="dropped-title">Listings</h2>
+                <h2 className="dropped-title">{t("nav_listings")}</h2>
                 <p className="dropped-subtitle">
                   {filters.model
-                    ? <>{filteredCount ?? "…"} {filters.model} in stock</>
-                    : <>Crawled once a day from all sources</>
+                    ? <>{filteredCount ?? "…"} {filters.model} {t("listings_in_stock")}</>
+                    : <>{t("listings_subtitle")}</>
                   }
                 </p>
               </div>
@@ -289,20 +297,26 @@ export default function App() {
                 <button
                   type="button"
                   className="reset-filters-btn"
-                  onClick={() => setFilters({ sort_by: "scraped_at", sort_dir: "desc", limit: LIMIT })}
+                  onClick={() => {
+                    setFilters({ sort_by: "scraped_at", sort_dir: "desc", limit: LIMIT });
+                    Object.keys(sidebarSectionPrefs).forEach(k => { sidebarSectionPrefs[k] = false; });
+                    sidebarSectionPrefs["Model"] = true;
+                    localStorage.setItem("sidebarSections", JSON.stringify(sidebarSectionPrefs));
+                    setSectionResetKey(k => k + 1);
+                  }}
                 >
-                  Reset filters
+                  {t("reset_filters")}
                 </button>
               </div>
 
-              <SidebarSection label="Model" defaultOpen>
+              <SidebarSection key={`Model-${sectionResetKey}`} label="Model" title={t("filter_model")} defaultOpen>
                 <div className="model-options">
                   <button
                     type="button"
                     className={`model-btn ${!filters.model ? "active" : ""}`}
                     onClick={() => setFilters({ ...filters, model: undefined })}
                   >
-                    All
+                    {t("filter_all")}
                   </button>
                   {MODELS.map((m) => (
                     <button
@@ -317,14 +331,14 @@ export default function App() {
                 </div>
               </SidebarSection>
 
-              <SidebarSection label="Source">
+              <SidebarSection key={`Source-${sectionResetKey}`} label="Source" title={t("filter_source")}>
                 <div className="model-options">
                   <button
                     type="button"
                     className={`model-btn ${!filters.source ? "active" : ""}`}
                     onClick={() => setFilters({ ...filters, source: undefined })}
                   >
-                    All
+                    {t("filter_all")}
                   </button>
                   {SOURCES.map((s) => (
                     <button
@@ -339,7 +353,7 @@ export default function App() {
                 </div>
               </SidebarSection>
 
-              <SidebarSection label="Sort">
+              <SidebarSection key={`Sort-${sectionResetKey}`} label="Sort" title={t("filter_sort")}>
                 <div className="sort-options">
                   {SORT_OPTIONS.map((o) => {
                     const key = `${o.sort_by}:${o.sort_dir}`;
@@ -357,7 +371,7 @@ export default function App() {
                 </div>
               </SidebarSection>
 
-              <SidebarSection label="Drivetrain">
+              <SidebarSection key={`Drivetrain-${sectionResetKey}`} label="Drivetrain" title={t("filter_drivetrain")}>
                 <div className="model-options">
                   {DRIVETRAINS.map((d) => (
                     <button key={d} type="button"
@@ -368,7 +382,7 @@ export default function App() {
                 </div>
               </SidebarSection>
 
-              <SidebarSection label="Autopilot">
+              <SidebarSection key={`Autopilot-${sectionResetKey}`} label="Autopilot" title={t("filter_autopilot")}>
                 <div className="model-options">
                   {AUTOPILOTS.map((a) => (
                     <button key={a} type="button"
@@ -379,7 +393,7 @@ export default function App() {
                 </div>
               </SidebarSection>
 
-              <SidebarSection label="Seats">
+              <SidebarSection key={`Seats-${sectionResetKey}`} label="Seats" title={t("filter_seats")}>
                 <div className="model-options">
                   {SEATS_OPTIONS.map((s) => (
                     <button key={s} type="button"
@@ -390,7 +404,7 @@ export default function App() {
                 </div>
               </SidebarSection>
 
-              <SidebarSection label="Color">
+              <SidebarSection key={`Color-${sectionResetKey}`} label="Color" title={t("filter_color")}>
                 <div className="model-options">
                   {COLOR_FAMILIES.map((c) => (
                     <button key={c} type="button"
@@ -401,18 +415,18 @@ export default function App() {
                 </div>
               </SidebarSection>
 
-              <SidebarSection label="Filters">
-                <RangeInputs label="Price" unit="€"
+              <SidebarSection key={`Filters-${sectionResetKey}`} label="Filters" title={t("filter_filters")}>
+                <RangeInputs label={t("filter_price")} unit="€"
                   minVal={filters.min_price} maxVal={filters.max_price}
                   onChangeMin={v => setFilters(f => ({ ...f, min_price: v }))}
                   onChangeMax={v => setFilters(f => ({ ...f, max_price: v }))}
                 />
-                <RangeInputs label="Year"
+                <RangeInputs label={t("filter_year")}
                   minVal={filters.min_year} maxVal={filters.max_year}
                   onChangeMin={v => setFilters(f => ({ ...f, min_year: v }))}
                   onChangeMax={v => setFilters(f => ({ ...f, max_year: v }))}
                 />
-                <RangeInputs label="Mileage" unit="km"
+                <RangeInputs label={t("filter_mileage")} unit="km"
                   minVal={filters.min_mileage} maxVal={filters.max_mileage}
                   disabled={filters.new_only}
                   onChangeMin={v => setFilters(f => ({ ...f, min_mileage: v }))}
@@ -424,7 +438,7 @@ export default function App() {
                   onClick={() => setFilters(f => ({ ...f, new_only: !f.new_only, min_mileage: undefined, max_mileage: undefined }))}
                 >
                   <span className="new-only-track"><span className="new-only-thumb" /></span>
-                  New &lt;100 km
+                  {t("filter_new")}
                 </button>
               </SidebarSection>
             </aside>
@@ -440,17 +454,17 @@ export default function App() {
                     <button className="active-tag-chip" onClick={() => setFilters((f) => ({ ...f, autopilot: undefined }))}>{filters.autopilot} ✕</button>
                   )}
                   {filters.seats && (
-                    <button className="active-tag-chip" onClick={() => setFilters((f) => ({ ...f, seats: undefined }))}>{filters.seats} seats ✕</button>
+                    <button className="active-tag-chip" onClick={() => setFilters((f) => ({ ...f, seats: undefined }))}>{filters.seats} {t("chip_seats")} ✕</button>
                   )}
                   {filters.color_family && (
                     <button className="active-tag-chip" onClick={() => setFilters((f) => ({ ...f, color_family: undefined }))}>{filters.color_family} ✕</button>
                   )}
                 </div>
               )}
-              {loading && <p className="state">Loading…</p>}
+              {loading && <p className="state">{t("loading")}</p>}
               {error && <p className="state error">Error: {error}</p>}
               {!loading && !error && listings.length === 0 && (
-                <p className="state">No listings yet. Run the scraper: <code>./scrape.sh leboncoin</code></p>
+                <p className="state">{t("no_listings")}</p>
               )}
 
               <ul className="grid">
@@ -458,7 +472,7 @@ export default function App() {
                   <li key={listing.id} className="card">
                     <div className="card-img-wrap">
                       {listing.image_url && <img src={listing.image_url} alt={listing.title} referrerPolicy="no-referrer" />}
-                      <button className={`bookmark-btn${isSaved(listing.id) ? " active" : ""}`} onClick={() => { if (!user) { setShowAuthMenu(true); return; } toggle(listing.id); }} aria-label="Save listing">🔖</button>
+                      <button className={`bookmark-btn${isSaved(listing.id) ? " active" : ""}`} onClick={() => { if (!user) { setShowAuthMenu(true); return; } toggle(listing.id); }} aria-label={t("save_listing")}>🔖</button>
                     </div>
                     <div className="card-body">
                       <h3>{listing.title}</h3>
@@ -473,12 +487,12 @@ export default function App() {
                         )}
                       </div>
                       <p className="meta">
-                        {listing.year ?? "—"} · {formatKm(listing.mileage_km)} · {listing.fuel ?? "—"}
+                        {listing.year ?? "—"} · {formatKm(listing.mileage_km, t("card_new"))} · {listing.fuel ?? "—"}
                       </p>
                       <p className="location">{listing.location ?? ""}</p>
-                      <p className="scraped-at">Crawled {formatDate(listing.scraped_at)}</p>
+                      <p className="scraped-at">{t("card_crawled")} {formatDate(listing.scraped_at)}</p>
                       <div className="cta-row">
-                        <a className="btn btn-primary" href={`#/listing/${listing.id}`}>View</a>
+                        <a className="btn btn-primary" href={`#/listing/${listing.id}`}>{t("card_view")}</a>
                         <span className="btn btn-secondary">{listing.source}</span>
                       </div>
                     </div>
@@ -487,7 +501,7 @@ export default function App() {
               </ul>
 
               <div ref={sentinelRef} className="load-more">
-                {loadingMore && <p className="state">Loading…</p>}
+                {loadingMore && <p className="state">{t("loading")}</p>}
               </div>
             </main>
           </div>
@@ -497,9 +511,9 @@ export default function App() {
       {showAuthMenu && (
         <div className="auth-modal-overlay" onClick={() => setShowAuthMenu(false)}>
           <div className="auth-modal" onClick={(e) => e.stopPropagation()}>
-            <button className="auth-modal-close" onClick={() => setShowAuthMenu(false)} aria-label="Close">✕</button>
-            <h2 className="auth-modal-title">Sign in to TeslaPricing</h2>
-            <p className="auth-modal-sub">Save listings and sync your watchlist across devices.</p>
+            <button className="auth-modal-close" onClick={() => setShowAuthMenu(false)} aria-label={t("auth_close")}>✕</button>
+            <h2 className="auth-modal-title">{t("auth_title")}</h2>
+            <p className="auth-modal-sub">{t("auth_subtitle")}</p>
             <div className="auth-modal-providers">
               <button className="auth-provider-btn" onClick={() => { setShowAuthMenu(false); signInWithGoogle(); }}>
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -508,13 +522,13 @@ export default function App() {
                   <path d="M3.964 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z" fill="#FBBC05"/>
                   <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 7.293C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
                 </svg>
-                Continue with Google
+                {t("auth_google")}
               </button>
               <button className="auth-provider-btn" onClick={() => { setShowAuthMenu(false); signInWithGithub(); }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                   <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>
                 </svg>
-                Continue with GitHub
+                {t("auth_github")}
               </button>
             </div>
           </div>
@@ -526,15 +540,15 @@ export default function App() {
         href="https://github.com/tolsadus/TeslaPricing/issues/new"
         target="_blank"
         rel="noreferrer"
-        title="Report an issue"
+        title={t("report_issue")}
       >
         <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm9 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM6.92 6.085c.081-.16.19-.299.34-.398.145-.097.371-.187.74-.187.28 0 .553.087.738.225A.613.613 0 0 1 9 6.25c0 .177-.04.264-.077.318a.956.956 0 0 1-.277.245c-.076.051-.158.1-.258.161l-.007.004a7.728 7.728 0 0 0-.313.208 2.88 2.88 0 0 0-.37.358.75.75 0 0 0 1.063 1.06 1.39 1.39 0 0 1 .167-.165 6.28 6.28 0 0 1 .235-.155l.003-.002c.098-.06.201-.124.308-.197.222-.15.468-.349.667-.620.2-.275.315-.622.315-1.015 0-.658-.316-1.167-.755-1.478C9.878 4.6 9.32 4.5 8.75 4.5c-.63 0-1.156.16-1.572.438-.413.276-.68.646-.828.977a.75.75 0 0 0 1.37.615Z"/></svg>
-        Report an issue
+        {t("report_issue")}
       </a>
 
       <ScrollToTop />
       <div className="version-badge">
-        {totalCount != null && <><span>{totalCount} cars</span><span className="version-badge-sep">·</span></>}
+        {totalCount != null && <><span>{totalCount} {t("nav_inventory")}</span><span className="version-badge-sep">·</span></>}
         {__GIT_BRANCH__}@{__GIT_COMMIT__}
       </div>
     </div>

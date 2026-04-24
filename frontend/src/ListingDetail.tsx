@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { fetchListing, fetchPhotos, fetchPriceHistory } from "./api";
 import type { Listing, PricePoint } from "./types";
 import { getDrivetrain, DRIVETRAIN_LABEL } from "./utils";
+import { useTranslation } from "./i18n";
 
 function formatPrice(v: number | null): string {
   if (v === null) return "—";
@@ -19,10 +20,10 @@ function formatDate(iso: string): string {
 
 type ChartPoint = { x: number; y: number; price: number; date: string };
 
-function PriceChart({ points }: { points: PricePoint[] }) {
+function PriceChart({ points, emptyMessage }: { points: PricePoint[]; emptyMessage: string }) {
   const valid = points.filter((p) => p.price_eur !== null) as { price_eur: number; recorded_at: string }[];
   if (valid.length === 0) {
-    return <p className="state">No price history yet.</p>;
+    return <p className="state">{emptyMessage}</p>;
   }
 
   const W = 720;
@@ -98,14 +99,14 @@ function PriceChart({ points }: { points: PricePoint[] }) {
   );
 }
 
-function Carousel({ photos, fallback }: { photos: string[]; fallback: string | null }) {
+function Carousel({ photos, fallback, photoAlt }: { photos: string[]; fallback: string | null; photoAlt: string }) {
   const [index, setIndex] = useState(0);
   const images = photos.length > 0 ? photos : fallback ? [fallback] : [];
   if (images.length === 0) return null;
 
   return (
     <div className="carousel">
-      <img src={images[index]} alt={`Photo ${index + 1}`} referrerPolicy="no-referrer" />
+      <img src={images[index]} alt={`${photoAlt} ${index + 1}`} referrerPolicy="no-referrer" />
       {images.length > 1 && (
         <>
           <button className="carousel-btn prev" onClick={() => setIndex((i) => (i - 1 + images.length) % images.length)}>‹</button>
@@ -122,6 +123,7 @@ function Carousel({ photos, fallback }: { photos: string[]; fallback: string | n
 }
 
 export default function ListingDetail({ id, isSaved, onToggle }: { id: number; isSaved?: boolean; onToggle?: () => void }) {
+  const { t } = useTranslation();
   const [listing, setListing] = useState<Listing | null>(null);
   const [history, setHistory] = useState<PricePoint[]>([]);
   const [photos, setPhotos] = useState<string[]>([]);
@@ -139,7 +141,7 @@ export default function ListingDetail({ id, isSaved, onToggle }: { id: number; i
   }, [id]);
 
   if (error) return <p className="state error">Error: {error}</p>;
-  if (!listing) return <p className="state">Loading…</p>;
+  if (!listing) return <p className="state">{t("loading")}</p>;
 
   const prices = history.map((h) => h.price_eur).filter((p): p is number => p !== null);
   const first = prices[0];
@@ -148,10 +150,10 @@ export default function ListingDetail({ id, isSaved, onToggle }: { id: number; i
 
   return (
     <div className="detail">
-      <button className="back-btn" onClick={() => { window.location.hash = ""; }}>← Back</button>
+      <button className="back-btn" onClick={() => { window.location.hash = ""; }}>{t("detail_back")}</button>
 
       <div className="detail-grid">
-        <Carousel photos={photos} fallback={listing.image_url} />
+        <Carousel photos={photos} fallback={listing.image_url} photoAlt={t("photo_alt")} />
         <div className="detail-info">
           <div>
             <h2>{listing.title}</h2>
@@ -163,23 +165,23 @@ export default function ListingDetail({ id, isSaved, onToggle }: { id: number; i
           </div>
           <p className="detail-price">{formatPrice(listing.price_eur)}</p>
           <div className="detail-specs">
-            {listing.year && <div className="spec-item"><span className="spec-label">Year</span><span className="spec-value">{listing.year}</span></div>}
-            {listing.mileage_km != null && <div className="spec-item"><span className="spec-label">Mileage</span><span className="spec-value">{listing.mileage_km <= 100 ? "Neuf" : formatKm(listing.mileage_km)}</span></div>}
-            {listing.fuel && <div className="spec-item"><span className="spec-label">Fuel</span><span className="spec-value">{listing.fuel}</span></div>}
-            {listing.horse_power != null && <div className="spec-item"><span className="spec-label">Power</span><span className="spec-value">{listing.horse_power} ch</span></div>}
-            {listing.color && <div className="spec-item"><span className="spec-label">Color</span><span className="spec-value">{listing.color}</span></div>}
-            {listing.doors != null && <div className="spec-item"><span className="spec-label">Doors</span><span className="spec-value">{listing.doors}</span></div>}
-            {listing.seats != null && <div className="spec-item"><span className="spec-label">Seats</span><span className="spec-value">{listing.seats}</span></div>}
-            {listing.soh != null && <div className="spec-item"><span className="spec-label">Battery SoH</span><span className="spec-value">{listing.soh}%</span></div>}
-            {listing.autopilot && <div className="spec-item"><span className="spec-label">Autopilot</span><span className="spec-value">{listing.autopilot}</span></div>}
+            {listing.year && <div className="spec-item"><span className="spec-label">{t("spec_year")}</span><span className="spec-value">{listing.year}</span></div>}
+            {listing.mileage_km != null && <div className="spec-item"><span className="spec-label">{t("spec_mileage")}</span><span className="spec-value">{listing.mileage_km <= 100 ? t("spec_new") : formatKm(listing.mileage_km)}</span></div>}
+            {listing.fuel && <div className="spec-item"><span className="spec-label">{t("spec_fuel")}</span><span className="spec-value">{listing.fuel}</span></div>}
+            {listing.horse_power != null && <div className="spec-item"><span className="spec-label">{t("spec_power")}</span><span className="spec-value">{listing.horse_power} ch</span></div>}
+            {listing.color && <div className="spec-item"><span className="spec-label">{t("spec_color")}</span><span className="spec-value">{listing.color}</span></div>}
+            {listing.doors != null && <div className="spec-item"><span className="spec-label">{t("spec_doors")}</span><span className="spec-value">{listing.doors}</span></div>}
+            {listing.seats != null && <div className="spec-item"><span className="spec-label">{t("spec_seats")}</span><span className="spec-value">{listing.seats}</span></div>}
+            {listing.soh != null && <div className="spec-item"><span className="spec-label">{t("spec_soh")}</span><span className="spec-value">{listing.soh}%</span></div>}
+            {listing.autopilot && <div className="spec-item"><span className="spec-label">{t("spec_autopilot")}</span><span className="spec-value">{listing.autopilot}</span></div>}
           </div>
           {listing.location && <p className="location">{listing.location}</p>}
-          <p className="scraped-at">Crawled {formatDate(listing.scraped_at)}</p>
+          <p className="scraped-at">{t("card_crawled")} {formatDate(listing.scraped_at)}</p>
           <div className="cta-row">
-            <a className="btn btn-primary" href={listing.url} target="_blank" rel="noreferrer">View on {listing.source}</a>
+            <a className="btn btn-primary" href={listing.url} target="_blank" rel="noreferrer">{t("detail_view_on")} {listing.source}</a>
             {onToggle && (
               <button className={`btn btn-secondary${isSaved ? " active" : ""}`} onClick={onToggle}>
-                {isSaved ? "✕ Remove" : "🔖 Save"}
+                {isSaved ? `✕ ${t("detail_remove")}` : `🔖 ${t("detail_save")}`}
               </button>
             )}
           </div>
@@ -188,14 +190,14 @@ export default function ListingDetail({ id, isSaved, onToggle }: { id: number; i
 
       <section className="chart-section">
         <div className="chart-head">
-          <h3>Price evolution</h3>
+          <h3>{t("price_history")}</h3>
           {first !== undefined && last !== undefined && first !== last && (
             <span className={`delta ${delta < 0 ? "down" : "up"}`}>
-              {delta > 0 ? "+" : ""}{formatPrice(delta)} highest ever crawl
+              {delta > 0 ? "+" : ""}{formatPrice(delta)} {t("price_highest")}
             </span>
           )}
         </div>
-        <PriceChart points={history} />
+        <PriceChart points={history} emptyMessage={t("price_history_empty")} />
       </section>
     </div>
   );

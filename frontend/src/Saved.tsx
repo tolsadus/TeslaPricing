@@ -3,14 +3,16 @@ import { fetchListingsByIds } from "./api";
 import type { Listing } from "./types";
 import { useAuth } from "./useAuth";
 import { getDrivetrain, DRIVETRAIN_LABEL } from "./utils";
+import { useTranslation } from "./i18n";
 
 function formatPrice(v: number | null): string {
   if (v === null) return "—";
   return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(v);
 }
 
-function formatKm(v: number | null): string {
+function formatKm(v: number | null, newLabel = "New"): string {
   if (v === null) return "—";
+  if (v <= 100) return newLabel;
   return `${new Intl.NumberFormat("fr-FR").format(v)} km`;
 }
 
@@ -20,6 +22,7 @@ function formatDate(iso: string): string {
 
 export default function Saved({ saved, toggle }: { saved: Set<number>; toggle: (id: number) => void }) {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,8 +45,8 @@ export default function Saved({ saved, toggle }: { saved: Set<number>; toggle: (
     return (
       <div className="auth-gate">
         <div className="auth-gate-icon">🔖</div>
-        <h2 className="auth-gate-title">Sign in to use your watchlist</h2>
-        <p className="auth-gate-sub">Save listings and access them from any device. Use the Sign in button at the top right.</p>
+        <h2 className="auth-gate-title">{t("saved_auth_title")}</h2>
+        <p className="auth-gate-sub">{t("saved_auth_subtitle")}</p>
       </div>
     );
   }
@@ -53,17 +56,17 @@ export default function Saved({ saved, toggle }: { saved: Set<number>; toggle: (
       <div className="page-hero">
         <div className="page-header">
           <div>
-            <h2 className="dropped-title">Saved listings</h2>
-            <p className="dropped-subtitle">{saved.size} car{saved.size !== 1 ? "s" : ""} on your watchlist</p>
+            <h2 className="dropped-title">{t("saved_title")}</h2>
+            <p className="dropped-subtitle">{saved.size} {saved.size !== 1 ? t("saved_subtitle_many") : t("saved_subtitle_one")}</p>
           </div>
         </div>
       </div>
 
       <div className="saved-body">
-        {loading && <p className="state">Loading…</p>}
+        {loading && <p className="state">{t("loading")}</p>}
         {error && <p className="state error">Error: {error}</p>}
         {!loading && saved.size === 0 && (
-          <p className="state">No saved listings yet. Click the bookmark icon on any car to save it.</p>
+          <p className="state">{t("saved_empty")}</p>
         )}
 
         <ul className="grid">
@@ -74,8 +77,8 @@ export default function Saved({ saved, toggle }: { saved: Set<number>; toggle: (
                 <button
                   className={`bookmark-btn active`}
                   onClick={() => toggle(listing.id)}
-                  aria-label="Remove from saved"
-                  title="Remove from saved"
+                  aria-label={t("saved_remove")}
+                  title={t("saved_remove")}
                 >
                   ✕
                 </button>
@@ -92,11 +95,11 @@ export default function Saved({ saved, toggle }: { saved: Set<number>; toggle: (
                     <span className="price-delta delta-down"><s>{formatPrice(listing.max_price)}</s></span>
                   )}
                 </div>
-                <p className="meta">{listing.year ?? "—"} · {formatKm(listing.mileage_km)} · {listing.fuel ?? "—"}</p>
+                <p className="meta">{listing.year ?? "—"} · {formatKm(listing.mileage_km, t("card_new"))} · {listing.fuel ?? "—"}</p>
                 <p className="location">{listing.location ?? ""}</p>
-                <p className="scraped-at">Crawled {formatDate(listing.scraped_at)}</p>
+                <p className="scraped-at">{t("card_crawled")} {formatDate(listing.scraped_at)}</p>
                 <div className="cta-row">
-                  <a className="btn btn-primary" href={`#/listing/${listing.id}`}>View</a>
+                  <a className="btn btn-primary" href={`#/listing/${listing.id}`}>{t("saved_view")}</a>
                   <span className="btn btn-secondary">{listing.source}</span>
                 </div>
               </div>

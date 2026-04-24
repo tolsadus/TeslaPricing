@@ -6,6 +6,29 @@
   gap: 0.6rem;
   justify-self: end;
 }
+
+.lang-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.15rem;
+}
+.lang-toggle button {
+  background: none;
+  border: none;
+  border-radius: 6px;
+  padding: 0.2rem 0.35rem;
+  font-size: 1rem;
+  cursor: pointer;
+  opacity: 0.4;
+  transition: opacity 0.15s, background 0.15s;
+  line-height: 1;
+}
+.lang-toggle button:hover { opacity: 0.75; }
+.lang-toggle button.active { opacity: 1; background: var(--chip-bg); }
 .auth-avatar {
   width: 30px;
   height: 30px;

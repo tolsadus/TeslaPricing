@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { fetchListing } from "./api";
 import type { Listing } from "./types";
+import { useTranslation } from "./i18n";
 
 type FieldDef = { key: keyof Listing; label: string; format?: (v: unknown) => string };
 
@@ -33,6 +34,7 @@ const FIELDS: FieldDef[] = [
 const MISSING_FIELDS: (keyof Listing)[] = ["make", "model", "version", "drivetrain", "year", "mileage_km", "fuel", "color", "horse_power", "doors", "seats", "soh", "location", "image_url"];
 
 export default function Details() {
+  const { t } = useTranslation();
   const [inputVal, setInputVal] = useState("");
   const [listing, setListing] = useState<Listing | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -59,8 +61,8 @@ export default function Details() {
       <div className="page-hero">
         <div className="page-header">
           <div>
-            <h2 className="dropped-title">Details audit</h2>
-            <p className="dropped-subtitle">Inspect which fields are missing for any listing</p>
+            <h2 className="dropped-title">{t("details_title")}</h2>
+            <p className="dropped-subtitle">{t("details_subtitle")}</p>
           </div>
         </div>
       </div>
@@ -70,13 +72,13 @@ export default function Details() {
           <input
             className="details-audit-input"
             type="number"
-            placeholder="Listing ID…"
+            placeholder={t("details_placeholder")}
             value={inputVal}
             onChange={(e) => setInputVal(e.target.value)}
             min={1}
           />
           <button className="btn btn-primary" type="submit" disabled={loading}>
-            {loading ? "Loading…" : "Inspect"}
+            {loading ? t("loading") : t("details_inspect")}
           </button>
         </form>
 
@@ -85,17 +87,17 @@ export default function Details() {
         {listing && (
           <>
             <div className="details-audit-summary">
-              <div className="audit-pill audit-ok">{filled.length} fields filled</div>
-              <div className="audit-pill audit-missing">{missing.length} fields missing</div>
-              <a className="btn btn-secondary" href={`#/listing/${listing.id}`} target="_blank" rel="noreferrer">Open listing ↗</a>
+              <div className="audit-pill audit-ok">{filled.length} {t("details_filled")}</div>
+              <div className="audit-pill audit-missing">{missing.length} {t("details_fields_missing")}</div>
+              <a className="btn btn-secondary" href={`#/listing/${listing.id}`} target="_blank" rel="noreferrer">{t("details_open")}</a>
             </div>
 
             <table className="details-audit-table">
               <thead>
                 <tr>
-                  <th>Field</th>
-                  <th>Value</th>
-                  <th>Status</th>
+                  <th>{t("details_field")}</th>
+                  <th>{t("details_value")}</th>
+                  <th>{t("details_status")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -112,7 +114,7 @@ export default function Details() {
                       </td>
                       <td className="field-status">
                         {isTracked && (isEmpty
-                          ? <span className="status-badge missing">missing</span>
+                          ? <span className="status-badge missing">{t("details_missing")}</span>
                           : <span className="status-badge ok">✓</span>
                         )}
                       </td>

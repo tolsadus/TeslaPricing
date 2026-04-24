@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { fetchTrends } from "./api";
 import type { TrendPoint } from "./types";
+import { useTranslation } from "./i18n";
 
 const MODEL_COLORS: Record<string, string> = {
   "Model 3": "#171a20",
@@ -57,12 +58,12 @@ function buildSeries(data: TrendPoint[]): Series[] {
   }));
 }
 
-function TrendChart({ series }: { series: Series[] }) {
+function TrendChart({ series, emptyMessage }: { series: Series[]; emptyMessage: string }) {
   const allPoints = series.flatMap((s) => s.points);
   if (allPoints.length === 0) {
     return (
       <div className="trend-empty">
-        <p>Not enough data yet — run more scrapes to see price trends over time.</p>
+        <p>{emptyMessage}</p>
       </div>
     );
   }
@@ -155,7 +156,7 @@ function TrendChart({ series }: { series: Series[] }) {
   );
 }
 
-function StatCard({ model, color, points }: Series) {
+function StatCard({ model, color, points, listingsLabel }: Series & { listingsLabel: string }) {
   const latest = points[points.length - 1];
   const first = points[0];
   if (!latest) return null;
@@ -170,7 +171,7 @@ function StatCard({ model, color, points }: Series) {
         <p className="trend-card-meta">
           {formatPrice(latest.min)} – {formatPrice(latest.max)}
         </p>
-        <p className="trend-card-count">{latest.count} listings</p>
+        <p className="trend-card-count">{latest.count} {listingsLabel}</p>
         {delta !== null && (
           <span className={`delta ${delta <= 0 ? "down" : "up"}`}>
             {delta > 0 ? "+" : ""}{formatPrice(delta)}
@@ -182,6 +183,7 @@ function StatCard({ model, color, points }: Series) {
 }
 
 export default function Trends() {
+  const { t } = useTranslation();
   const [data, setData] = useState<TrendPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -199,13 +201,13 @@ export default function Trends() {
     <div className="trends-page">
       <div className="page-header">
         <div>
-          <h2 className="dropped-title">Trends</h2>
-          <p className="dropped-subtitle">Average listing price per model across all crawled sources</p>
+          <h2 className="dropped-title">{t("trends_title")}</h2>
+          <p className="dropped-subtitle">{t("trends_subtitle")}</p>
         </div>
       </div>
 
 
-      {loading && <p className="state">Loading…</p>}
+      {loading && <p className="state">{t("loading")}</p>}
       {error && <p className="state error">Error: {error}</p>}
 
       {!loading && !error && (
@@ -219,12 +221,12 @@ export default function Trends() {
                 </span>
               ))}
             </div>
-            <TrendChart series={series} />
+            <TrendChart series={series} emptyMessage={t("trends_empty")} />
           </div>
 
           <div className="trend-cards">
             {series.map((s) => (
-              <StatCard key={s.model} {...s} />
+              <StatCard key={s.model} {...s} listingsLabel={t("trends_listings")} />
             ))}
           </div>
         </>
