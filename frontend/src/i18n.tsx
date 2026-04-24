@@ -55,6 +55,7 @@ const en = {
   auth_subtitle: "Save listings and sync your watchlist across devices.",
   auth_google: "Continue with Google",
   auth_github: "Continue with GitHub",
+  auth_x: "Continue with X",
   auth_close: "Close",
   // Misc
   report_issue: "Report an issue",
@@ -197,6 +198,7 @@ const fr: Record<TKey, string> = {
   auth_subtitle: "Sauvegardez vos annonces et synchronisez votre liste sur tous vos appareils.",
   auth_google: "Continuer avec Google",
   auth_github: "Continuer avec GitHub",
+  auth_x: "Continuer avec X",
   auth_close: "Fermer",
   // Misc
   report_issue: "Signaler un problème",
