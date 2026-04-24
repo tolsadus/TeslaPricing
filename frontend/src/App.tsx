@@ -182,7 +182,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { user, signOut, signInWithGoogle, signInWithGithub } = useAuth();
+  const { user, isAdmin, signOut, signInWithGoogle, signInWithGithub } = useAuth();
   const [showAuthMenu, setShowAuthMenu] = useState(false);
   const { toggle, isSaved, saved } = useSaved(user);
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -241,7 +241,7 @@ export default function App() {
           <a className={`nav-link ${page === "dropped" ? "active" : ""}`} href="#/dropped">{t("nav_deals")}</a>
           <a className={`nav-link ${page === "trends" ? "active" : ""}`} href="#/trends">{t("nav_trends")}</a>
           <a className={`nav-link ${page === "watchlist" ? "active" : ""}`} href="#/watchlist">{t("nav_watchlist")} {saved.size > 0 && <span className="nav-count">{saved.size}</span>}</a>
-          <a className={`nav-link ${page === "details" ? "active" : ""}`} href="#/details">{t("nav_details")}</a>
+          {isAdmin && <a className={`nav-link ${page === "details" ? "active" : ""}`} href="#/details">{t("nav_details")}</a>}
         </nav>
         <div className="topbar-meta">
           {page === "detail" ? t("nav_listings") : page === "trends" ? t("nav_trends") : `${totalCount ?? "…"} ${t("nav_inventory")}`}
@@ -272,7 +272,7 @@ export default function App() {
         <Dropped />
       ) : page === "watchlist" ? (
         <Saved saved={saved} toggle={toggle} />
-      ) : page === "details" ? (
+      ) : page === "details" && isAdmin ? (
         <Details />
       ) : (
         <>
