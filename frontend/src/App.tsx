@@ -185,7 +185,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { user, isAdmin, signOut, signInWithGoogle, signInWithGithub, signInWithTwitter } = useAuth();
+  const { user, isAdmin, signOut, signInWithGoogle, signInWithGithub } = useAuth();
   const [showAuthMenu, setShowAuthMenu] = useState(false);
   const { toggle, isSaved, saved } = useSaved(user);
   const { ids: compareIds, toggle: toggleCompare, clear: clearCompare, isComparing } = useCompare();
@@ -546,11 +546,11 @@ export default function App() {
                 </svg>
                 {t("auth_github")}
               </button>
-              <button className="auth-provider-btn" onClick={() => { setShowAuthMenu(false); signInWithTwitter(); }}>
+              <button className="auth-provider-btn" disabled style={{ opacity: 0.4, cursor: "not-allowed" }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                   <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.253 5.622 5.911-5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                 </svg>
-                {t("auth_x")}
+                {t("auth_x")} (coming soon)
               </button>
             </div>
           </div>
