@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchListingsByIds } from "./api";
 import type { Listing } from "./types";
-import { useSaved } from "./useSaved";
 import { useAuth } from "./useAuth";
 import { getDrivetrain, DRIVETRAIN_LABEL } from "./utils";
 
@@ -19,9 +18,8 @@ function formatDate(iso: string): string {
   return new Intl.DateTimeFormat("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(iso));
 }
 
-export default function Saved() {
+export default function Saved({ saved, toggle }: { saved: Set<number>; toggle: (id: number) => void }) {
   const { user } = useAuth();
-  const { saved, toggle } = useSaved(user);
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,6 +32,11 @@ export default function Saved() {
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, [saved, user]);
+
+  // Remove listings from local state immediately when unbookmarked
+  useEffect(() => {
+    setListings((prev) => prev.filter((l) => saved.has(l.id)));
+  }, [saved]);
 
   if (!user) {
     return (

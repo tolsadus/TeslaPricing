@@ -253,7 +253,7 @@ export default function App() {
       ) : page === "dropped" ? (
         <Dropped />
       ) : page === "watchlist" ? (
-        <Saved />
+        <Saved saved={saved} toggle={toggle} />
       ) : page === "details" ? (
         <Details />
       ) : (
