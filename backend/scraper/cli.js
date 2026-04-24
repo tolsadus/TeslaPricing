@@ -4,6 +4,14 @@
 const { Command } = require('commander')
 const { upsert, pool } = require('./db')
 
+function makeOnPage(total) {
+  return async (listings) => {
+    const n = await upsert(listings)
+    total.count += n
+    console.log(`  [db] upserted ${n} (total so far: ${total.count})`)
+  }
+}
+
 const program = new Command()
 program.name('scrape').description('TeslaPricing scraper CLI')
 
@@ -13,9 +21,9 @@ program
   .option('--pages <n>', 'number of pages', v => parseInt(v, 10), 10)
   .action(async ({ pages }) => {
     const { scrape } = require('./capcar')
-    const listings = await scrape({ pages })
-    const n = await upsert(listings)
-    console.log(`\nDone. Upserted ${n} listings.`)
+    const total = { count: 0 }
+    await scrape({ pages, onPage: makeOnPage(total) })
+    console.log(`\nDone. Upserted ${total.count} listings.`)
     await pool.end()
   })
 
@@ -25,9 +33,9 @@ program
   .option('--pages <n>', 'number of pages', v => parseInt(v, 10), 1)
   .action(async ({ pages }) => {
     const { scrape } = require('./gmecars')
-    const listings = await scrape({ pages })
-    const n = await upsert(listings)
-    console.log(`\nDone. Upserted ${n} listings.`)
+    const total = { count: 0 }
+    await scrape({ pages, onPage: makeOnPage(total) })
+    console.log(`\nDone. Upserted ${total.count} listings.`)
     await pool.end()
   })
 
@@ -38,9 +46,9 @@ program
   .option('--headed', 'open a browser window (needed to solve captcha on first run)')
   .action(async ({ pages, headed }) => {
     const { scrape } = require('./leboncoin')
-    const listings = await scrape({ pages, headed })
-    const n = await upsert(listings)
-    console.log(`\nDone. Upserted ${n} listings.`)
+    const total = { count: 0 }
+    await scrape({ pages, headed, onPage: makeOnPage(total) })
+    console.log(`\nDone. Upserted ${total.count} listings.`)
     await pool.end()
   })
 
@@ -50,9 +58,9 @@ program
   .option('--models <list>', 'comma-separated models (m3,my,ms,mx)', 'm3,my,ms,mx')
   .action(async ({ models }) => {
     const { scrape } = require('./tesla')
-    const listings = await scrape({ models: models.split(',') })
-    const n = await upsert(listings)
-    console.log(`\nDone. Upserted ${n} listings.`)
+    const total = { count: 0 }
+    await scrape({ models: models.split(','), onPage: makeOnPage(total) })
+    console.log(`\nDone. Upserted ${total.count} listings.`)
     await pool.end()
   })
 
@@ -63,9 +71,9 @@ program
   .option('--headed', 'open a browser window (useful if a cookie wall blocks headless)')
   .action(async ({ pages, headed }) => {
     const { scrape } = require('./aramisauto')
-    const listings = await scrape({ pages, headed })
-    const n = await upsert(listings)
-    console.log(`\nDone. Upserted ${n} listings.`)
+    const total = { count: 0 }
+    await scrape({ pages, headed, onPage: makeOnPage(total) })
+    console.log(`\nDone. Upserted ${total.count} listings.`)
     await pool.end()
   })
 
@@ -75,9 +83,9 @@ program
   .option('--pages <n>', 'number of pages', v => parseInt(v, 10), 5)
   .action(async ({ pages }) => {
     const { scrape } = require('./renew')
-    const listings = await scrape({ pages })
-    const n = await upsert(listings)
-    console.log(`\nDone. Upserted ${n} listings.`)
+    const total = { count: 0 }
+    await scrape({ pages, onPage: makeOnPage(total) })
+    console.log(`\nDone. Upserted ${total.count} listings.`)
     await pool.end()
   })
 
@@ -87,9 +95,9 @@ program
   .option('--pages <n>', 'number of pages', v => parseInt(v, 10), 10)
   .action(async ({ pages }) => {
     const { scrape } = require('./lbauto')
-    const listings = await scrape({ pages })
-    const n = await upsert(listings)
-    console.log(`\nDone. Upserted ${n} listings.`)
+    const total = { count: 0 }
+    await scrape({ pages, onPage: makeOnPage(total) })
+    console.log(`\nDone. Upserted ${total.count} listings.`)
     await pool.end()
   })
 
@@ -107,9 +115,9 @@ program
       await pool.end()
       return
     }
-    const listings = await lacentrale.scrape({ pages, headed, debug })
-    const n = await upsert(listings)
-    console.log(`\nDone. Upserted ${n} listings.`)
+    const total = { count: 0 }
+    await lacentrale.scrape({ pages, headed, debug, onPage: makeOnPage(total) })
+    console.log(`\nDone. Upserted ${total.count} listings.`)
     await pool.end()
   })
 

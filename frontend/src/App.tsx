@@ -14,6 +14,7 @@ import type { Listing, ListingFilters, SortBy, SortDir } from "./types";
 import { getDrivetrain, DRIVETRAIN_LABEL } from "./utils";
 
 const MODELS = ["Model S", "Model 3", "Model X", "Model Y"] as const;
+const SOURCES = ["tesla", "leboncoin", "lacentrale", "capcar", "lbauto", "aramisauto", "gmecars", "renew"] as const;
 
 const SORT_OPTIONS: { label: string; sort_by: SortBy; sort_dir: SortDir }[] = [
   { label: "Latest crawl", sort_by: "scraped_at", sort_dir: "desc" },
@@ -31,6 +32,14 @@ const PRICE_MAX = 150_000;
 const PRICE_STEP = 1_000;
 const YEAR_MIN = 2012;
 const YEAR_MAX = new Date().getFullYear();
+const MILEAGE_MIN = 0;
+const MILEAGE_MAX = 200_000;
+const MILEAGE_STEP = 5_000;
+
+const DRIVETRAINS = ["RWD", "AWD", "Performance", "Plaid"] as const;
+const AUTOPILOTS = ["EAP", "FSD"] as const;
+const SEATS_OPTIONS = [5, 6, 7] as const;
+const COLOR_FAMILIES = ["Noir", "Blanc", "Gris", "Bleu", "Rouge"] as const;
 
 function sortKey(f: ListingFilters): string {
   return `${f.sort_by ?? "scraped_at"}:${f.sort_dir ?? "desc"}`;
@@ -129,6 +138,21 @@ function RangeSlider({
   );
 }
 
+function SidebarSection({ label, children, defaultOpen = false }: { label: string; children: React.ReactNode; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="sidebar-section">
+      <button type="button" className="sidebar-heading-btn" onClick={() => setOpen(o => !o)}>
+        <span>{label}</span>
+        <span className={`sidebar-arrow ${open ? "open" : ""}`}>▾</span>
+      </button>
+      <div className={`sidebar-body-wrap ${open ? "open" : ""}`}>
+        <div className="sidebar-body">{children}</div>
+      </div>
+    </div>
+  );
+}
+
 function ScrollToTop() {
   const [visible, setVisible] = useState(false);
   useEffect(() => {
@@ -153,13 +177,34 @@ export default function App() {
   const [totalCount, setTotalCount] = useState<number | null>(null);
   const [filteredCount, setFilteredCount] = useState<number | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
-  const [filters, setFilters] = useState<ListingFilters>({
-    sort_by: "scraped_at",
-    sort_dir: "desc",
-    limit: LIMIT,
+  const [filters, setFilters] = useState<ListingFilters>(() => {
+    try {
+      const saved = localStorage.getItem("filters");
+      if (saved) return { ...JSON.parse(saved), limit: LIMIT };
+    } catch {}
+    return { sort_by: "scraped_at", sort_dir: "desc", limit: LIMIT };
   });
-  const [priceRange, setPriceRange] = useState<[number, number]>([PRICE_MIN, PRICE_MAX]);
-  const [yearRange, setYearRange] = useState<[number, number]>([YEAR_MIN, YEAR_MAX]);
+  const [priceRange, setPriceRange] = useState<[number, number]>(() => {
+    try {
+      const saved = localStorage.getItem("priceRange");
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return [PRICE_MIN, PRICE_MAX];
+  });
+  const [yearRange, setYearRange] = useState<[number, number]>(() => {
+    try {
+      const saved = localStorage.getItem("yearRange");
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return [YEAR_MIN, YEAR_MAX];
+  });
+  const [mileageRange, setMileageRange] = useState<[number, number]>(() => {
+    try {
+      const saved = localStorage.getItem("mileageRange");
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return [MILEAGE_MIN, MILEAGE_MAX];
+  });
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -171,7 +216,7 @@ export default function App() {
   const sentinelRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  function applySliders(price: [number, number], year: [number, number]) {
+  function applySliders(price: [number, number], year: [number, number], mileage: [number, number]) {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       setFilters((f) => ({
@@ -180,9 +225,20 @@ export default function App() {
         max_price: price[1] < PRICE_MAX ? price[1] : undefined,
         min_year: year[0] > YEAR_MIN ? year[0] : undefined,
         max_year: year[1] < YEAR_MAX ? year[1] : undefined,
+        min_mileage: mileage[0] > MILEAGE_MIN ? mileage[0] : undefined,
+        max_mileage: mileage[1] < MILEAGE_MAX ? mileage[1] : undefined,
       }));
     }, 300);
   }
+
+  useEffect(() => {
+    const { limit: _, ...toSave } = filters;
+    localStorage.setItem("filters", JSON.stringify(toSave));
+  }, [filters]);
+
+  useEffect(() => { localStorage.setItem("priceRange", JSON.stringify(priceRange)); }, [priceRange]);
+  useEffect(() => { localStorage.setItem("yearRange", JSON.stringify(yearRange)); }, [yearRange]);
+  useEffect(() => { localStorage.setItem("mileageRange", JSON.stringify(mileageRange)); }, [mileageRange]);
 
   useEffect(() => {
     fetchStats().then((s) => setTotalCount(s.total)).catch(() => {});
@@ -282,7 +338,21 @@ export default function App() {
             {/* ── Left sidebar ── */}
             <aside className="sidebar">
               <div className="sidebar-section">
-                <p className="sidebar-heading">Model</p>
+                <button
+                  type="button"
+                  className="reset-filters-btn"
+                  onClick={() => {
+                    setFilters({ sort_by: "scraped_at", sort_dir: "desc", limit: LIMIT });
+                    setPriceRange([PRICE_MIN, PRICE_MAX]);
+                    setYearRange([YEAR_MIN, YEAR_MAX]);
+                    setMileageRange([MILEAGE_MIN, MILEAGE_MAX]);
+                  }}
+                >
+                  Reset filters
+                </button>
+              </div>
+
+              <SidebarSection label="Model" defaultOpen>
                 <div className="model-options">
                   <button
                     type="button"
@@ -302,10 +372,31 @@ export default function App() {
                     </button>
                   ))}
                 </div>
-              </div>
+              </SidebarSection>
 
-              <div className="sidebar-section">
-                <p className="sidebar-heading">Sort</p>
+              <SidebarSection label="Source">
+                <div className="model-options">
+                  <button
+                    type="button"
+                    className={`model-btn ${!filters.source ? "active" : ""}`}
+                    onClick={() => setFilters({ ...filters, source: undefined })}
+                  >
+                    All
+                  </button>
+                  {SOURCES.map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      className={`model-btn ${filters.source === s ? "active" : ""}`}
+                      onClick={() => setFilters({ ...filters, source: filters.source === s ? undefined : s })}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </SidebarSection>
+
+              <SidebarSection label="Sort">
                 <div className="sort-options">
                   {SORT_OPTIONS.map((o) => {
                     const key = `${o.sort_by}:${o.sort_dir}`;
@@ -321,10 +412,53 @@ export default function App() {
                     );
                   })}
                 </div>
-              </div>
+              </SidebarSection>
 
-              <div className="sidebar-section">
-                <p className="sidebar-heading">Filters</p>
+              <SidebarSection label="Drivetrain">
+                <div className="model-options">
+                  {DRIVETRAINS.map((d) => (
+                    <button key={d} type="button"
+                      className={`model-btn ${filters.drivetrain === d ? "active" : ""}`}
+                      onClick={() => setFilters((f) => ({ ...f, drivetrain: f.drivetrain === d ? undefined : d }))}
+                    >{d}</button>
+                  ))}
+                </div>
+              </SidebarSection>
+
+              <SidebarSection label="Autopilot">
+                <div className="model-options">
+                  {AUTOPILOTS.map((a) => (
+                    <button key={a} type="button"
+                      className={`model-btn ${filters.autopilot === a ? "active" : ""}`}
+                      onClick={() => setFilters((f) => ({ ...f, autopilot: f.autopilot === a ? undefined : a }))}
+                    >{a}</button>
+                  ))}
+                </div>
+              </SidebarSection>
+
+              <SidebarSection label="Seats">
+                <div className="model-options">
+                  {SEATS_OPTIONS.map((s) => (
+                    <button key={s} type="button"
+                      className={`model-btn ${filters.seats === s ? "active" : ""}`}
+                      onClick={() => setFilters((f) => ({ ...f, seats: f.seats === s ? undefined : s }))}
+                    >{s}</button>
+                  ))}
+                </div>
+              </SidebarSection>
+
+              <SidebarSection label="Color">
+                <div className="model-options">
+                  {COLOR_FAMILIES.map((c) => (
+                    <button key={c} type="button"
+                      className={`model-btn ${filters.color_family === c ? "active" : ""}`}
+                      onClick={() => setFilters((f) => ({ ...f, color_family: f.color_family === c ? undefined : c }))}
+                    >{c}</button>
+                  ))}
+                </div>
+              </SidebarSection>
+
+              <SidebarSection label="Filters">
                 <RangeSlider
                   label="Price"
                   min={PRICE_MIN} max={PRICE_MAX} step={PRICE_STEP}
@@ -334,7 +468,7 @@ export default function App() {
                       ? "Any"
                       : new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(v)
                   }
-                  onChange={(lo, hi) => { setPriceRange([lo, hi]); applySliders([lo, hi], yearRange); }}
+                  onChange={(lo, hi) => { setPriceRange([lo, hi]); applySliders([lo, hi], yearRange, mileageRange); }}
                 />
                 <RangeSlider
                   label="Year"
@@ -343,24 +477,37 @@ export default function App() {
                   formatValue={(v, which) =>
                     which === "min" && v === YEAR_MIN ? "Any" : String(v)
                   }
-                  onChange={(lo, hi) => { setYearRange([lo, hi]); applySliders(priceRange, [lo, hi]); }}
+                  onChange={(lo, hi) => { setYearRange([lo, hi]); applySliders(priceRange, [lo, hi], mileageRange); }}
                 />
-              </div>
+                <RangeSlider
+                  label="Mileage"
+                  min={MILEAGE_MIN} max={MILEAGE_MAX} step={MILEAGE_STEP}
+                  valueMin={mileageRange[0]} valueMax={mileageRange[1]}
+                  formatValue={(v, which) =>
+                    which === "max" && v === MILEAGE_MAX
+                      ? "Any"
+                      : `${new Intl.NumberFormat("fr-FR").format(v)} km`
+                  }
+                  onChange={(lo, hi) => { setMileageRange([lo, hi]); applySliders(priceRange, yearRange, [lo, hi]); }}
+                />
+              </SidebarSection>
             </aside>
 
             {/* ── Main grid ── */}
             <main className="grid-wrap">
-              {(filters.drivetrain || filters.autopilot) && (
+              {(filters.drivetrain || filters.autopilot || filters.seats || filters.color_family) && (
                 <div className="active-tag-filters">
                   {filters.drivetrain && (
-                    <button className="active-tag-chip" onClick={() => setFilters((f) => ({ ...f, drivetrain: undefined }))}>
-                      {filters.drivetrain} ✕
-                    </button>
+                    <button className="active-tag-chip" onClick={() => setFilters((f) => ({ ...f, drivetrain: undefined }))}>{filters.drivetrain} ✕</button>
                   )}
                   {filters.autopilot && (
-                    <button className="active-tag-chip" onClick={() => setFilters((f) => ({ ...f, autopilot: undefined }))}>
-                      {filters.autopilot} ✕
-                    </button>
+                    <button className="active-tag-chip" onClick={() => setFilters((f) => ({ ...f, autopilot: undefined }))}>{filters.autopilot} ✕</button>
+                  )}
+                  {filters.seats && (
+                    <button className="active-tag-chip" onClick={() => setFilters((f) => ({ ...f, seats: undefined }))}>{filters.seats} seats ✕</button>
+                  )}
+                  {filters.color_family && (
+                    <button className="active-tag-chip" onClick={() => setFilters((f) => ({ ...f, color_family: undefined }))}>{filters.color_family} ✕</button>
                   )}
                 </div>
               )}

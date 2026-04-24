@@ -69,10 +69,14 @@ export type ListingFilters = {
   model?: string;
   drivetrain?: string;
   autopilot?: string;
+  seats?: number;
+  color_family?: string;
   min_price?: number;
   max_price?: number;
   min_year?: number;
   max_year?: number;
+  min_mileage?: number;
+  max_mileage?: number;
   source?: string;
   sort_by?: SortBy;
   sort_dir?: SortDir;

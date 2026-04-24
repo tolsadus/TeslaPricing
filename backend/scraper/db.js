@@ -6,7 +6,7 @@ const fs = require('fs')
 const path = require('path')
 const { Pool } = require('pg')
 
-const BATCH_SIZE = 30
+const BATCH_SIZE = 500
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL.replace('?sslmode=require', ''),

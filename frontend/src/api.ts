@@ -9,16 +9,33 @@ const SORT_COLUMN: Record<string, string> = {
   price_delta: "price_delta",
 };
 
+const COLOR_OR: Record<string, string> = {
+  Noir:  "color.ilike.%noir%",
+  Blanc: "color.ilike.%blanc%",
+  Gris:  "color.ilike.%gris%,color.ilike.%silver%",
+  Bleu:  "color.ilike.%bleu%",
+  Rouge: "color.ilike.%rouge%",
+};
+
+function applyFilters<T>(query: T, filters: ListingFilters): T {
+  let q = query as any;
+  if (filters.model) q = q.ilike("model", `%${filters.model}%`);
+  if (filters.drivetrain) q = q.eq("drivetrain", filters.drivetrain);
+  if (filters.autopilot) q = q.eq("autopilot", filters.autopilot);
+  if (filters.seats !== undefined) q = q.eq("seats", filters.seats);
+  if (filters.color_family && COLOR_OR[filters.color_family]) q = q.or(COLOR_OR[filters.color_family]);
+  if (filters.min_price !== undefined) q = q.gte("price_eur", filters.min_price);
+  if (filters.max_price !== undefined) q = q.lte("price_eur", filters.max_price);
+  if (filters.min_year !== undefined) q = q.gte("year", filters.min_year);
+  if (filters.max_year !== undefined) q = q.lte("year", filters.max_year);
+  if (filters.min_mileage !== undefined) q = q.gte("mileage_km", filters.min_mileage);
+  if (filters.max_mileage !== undefined) q = q.lte("mileage_km", filters.max_mileage);
+  if (filters.source) q = q.eq("source", filters.source);
+  return q as T;
+}
+
 export async function fetchListings(filters: ListingFilters = {}): Promise<Listing[]> {
   const {
-    model,
-    drivetrain,
-    autopilot,
-    min_price,
-    max_price,
-    min_year,
-    max_year,
-    source,
     sort_by = "scraped_at",
     sort_dir = "desc",
     limit = 50,
@@ -35,14 +52,7 @@ export async function fetchListings(filters: ListingFilters = {}): Promise<Listi
     .order("id", { ascending: false })
     .range(offset, offset + limit - 1);
 
-  if (model) query = query.ilike("model", `%${model}%`);
-  if (drivetrain) query = query.eq("drivetrain", drivetrain);
-  if (autopilot) query = query.eq("autopilot", autopilot);
-  if (min_price !== undefined) query = query.gte("price_eur", min_price);
-  if (max_price !== undefined) query = query.lte("price_eur", max_price);
-  if (min_year !== undefined) query = query.gte("year", min_year);
-  if (max_year !== undefined) query = query.lte("year", max_year);
-  if (source) query = query.eq("source", source);
+  query = applyFilters(query, filters);
 
   const { data, error } = await query;
   if (error) throw new Error(error.message);
@@ -79,16 +89,9 @@ export async function fetchPhotos(id: number): Promise<string[]> {
   return (data ?? []).map((r) => r.url);
 }
 
-export async function fetchCount(filters: Pick<ListingFilters, "model" | "drivetrain" | "autopilot" | "min_price" | "max_price" | "min_year" | "max_year" | "source"> = {}): Promise<number> {
+export async function fetchCount(filters: ListingFilters = {}): Promise<number> {
   let query = supabase.from("listings_with_delta").select("*", { count: "exact", head: true });
-  if (filters.model) query = query.ilike("model", `%${filters.model}%`);
-  if (filters.drivetrain) query = query.eq("drivetrain", filters.drivetrain);
-  if (filters.autopilot) query = query.eq("autopilot", filters.autopilot);
-  if (filters.min_price !== undefined) query = query.gte("price_eur", filters.min_price);
-  if (filters.max_price !== undefined) query = query.lte("price_eur", filters.max_price);
-  if (filters.min_year !== undefined) query = query.gte("year", filters.min_year);
-  if (filters.max_year !== undefined) query = query.lte("year", filters.max_year);
-  if (filters.source) query = query.eq("source", filters.source);
+  query = applyFilters(query, filters);
   const { count, error } = await query;
   if (error) throw new Error(error.message);
   return count ?? 0;

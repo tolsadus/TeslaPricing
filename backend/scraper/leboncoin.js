@@ -173,7 +173,7 @@ async function scrapePage(context, url) {
   }
 }
 
-async function scrape({ pages = 1, headed = false } = {}) {
+async function scrape({ pages = 1, headed = false, onPage } = {}) {
   fs.mkdirSync(PROFILE_DIR, { recursive: true })
 
   const context = await chromium.launchPersistentContext(PROFILE_DIR, {
@@ -189,7 +189,7 @@ async function scrape({ pages = 1, headed = false } = {}) {
   try {
     // Accept cookies once on first load before scraping
     {
-      const cookiePage = await context.newPage()
+      const cookiePage = context.pages()[0] ?? await context.newPage()
       try {
         await cookiePage.goto(SEARCH_URL, { waitUntil: 'domcontentloaded', timeout: 30000 })
         await cookiePage.waitForTimeout(2000)
@@ -200,31 +200,46 @@ async function scrape({ pages = 1, headed = false } = {}) {
       await cookiePage.close()
     }
 
-    for (let p = 1; p <= pages; p++) {
-      const url = p === 1 ? SEARCH_URL : `${SEARCH_URL}&page=${p}`
-      console.log(`[leboncoin] page ${p}: ${url}`)
-      const { listings, captcha } = await scrapePage(context, url)
+    const CONCURRENCY = 3
+    const pageNums = Array.from({ length: pages }, (_, i) => i + 1)
 
-      if (captcha) {
-        if (headed) {
-          console.log('  ! Captcha detected. Solve it in the browser window, then press Enter here...')
-          await new Promise(resolve => process.stdin.once('data', resolve))
-          // retry the same page after manual solve
-          const retry = await scrapePage(context, url)
-          if (retry.captcha) { console.error('  ! Still blocked after captcha solve. Aborting.'); break }
-          for (const l of retry.listings) all.set(l.external_id, l)
-          console.log(`  -> ${retry.listings.length} listings`)
-        } else {
-          console.error('  ! Captcha detected. Run once in headed mode to solve it:')
-          console.error('  !   node scraper/cli.js leboncoin --headed')
-          break
+    for (let i = 0; i < pageNums.length; i += CONCURRENCY) {
+      const batch = pageNums.slice(i, i + CONCURRENCY)
+      console.log(`[leboncoin] fetching pages ${batch.join(', ')}`)
+
+      const results = await Promise.all(batch.map(async (p) => {
+        const url = p === 1 ? SEARCH_URL : `${SEARCH_URL}&page=${p}`
+        const result = await scrapePage(context, url)
+        return { p, url, ...result }
+      }))
+
+      let aborted = false
+      for (const { p, url, listings, captcha } of results) {
+        if (captcha) {
+          if (headed) {
+            console.log(`  ! Captcha on page ${p}. Solve it in the browser window, then press Enter here...`)
+            await new Promise(resolve => process.stdin.once('data', resolve))
+            const retry = await scrapePage(context, url)
+            if (retry.captcha) { console.error('  ! Still blocked after captcha solve. Aborting.'); aborted = true; break }
+            const retryNew = retry.listings.filter(l => !all.has(l.external_id))
+            for (const l of retry.listings) all.set(l.external_id, l)
+            if (onPage && retryNew.length > 0) await onPage(retryNew)
+            console.log(`  -> page ${p}: ${retry.listings.length} listings`)
+          } else {
+            console.error('  ! Captcha detected. Run once in headed mode to solve it:')
+            console.error('  !   node scraper/cli.js leboncoin --headed')
+            aborted = true; break
+          }
+          continue
         }
-        continue
+        console.log(`  -> page ${p}: ${listings.length} listings`)
+        const pageListings = listings.filter(l => !all.has(l.external_id))
+        for (const l of listings) all.set(l.external_id, l)
+        if (onPage && pageListings.length > 0) await onPage(pageListings)
       }
 
-      console.log(`  -> ${listings.length} listings`)
-      for (const l of listings) all.set(l.external_id, l)
-      if (p < pages) await new Promise(r => setTimeout(r, 3000 + Math.random() * 3000))
+      if (aborted) break
+      if (i + CONCURRENCY < pageNums.length) await new Promise(r => setTimeout(r, 3000 + Math.random() * 2000))
     }
   } finally {
     await context.close()

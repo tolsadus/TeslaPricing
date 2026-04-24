@@ -212,7 +212,7 @@ async function scrapePage(context, url) {
   }
 }
 
-async function scrape({ pages = 1, headed = false } = {}) {
+async function scrape({ pages = 1, headed = false, onPage } = {}) {
   fs.mkdirSync(PROFILE_DIR, { recursive: true })
 
   const context = await chromium.launchPersistentContext(PROFILE_DIR, {
@@ -231,7 +231,9 @@ async function scrape({ pages = 1, headed = false } = {}) {
       console.log(`[aramisauto] page ${p}: ${url}`)
       const listings = await scrapePage(context, url)
       console.log(`  -> ${listings.length} listings`)
+      const pageListings = listings.filter(l => !all.has(l.external_id))
       for (const l of listings) all.set(l.external_id, l)
+      if (onPage && pageListings.length > 0) await onPage(pageListings)
       if (p < pages) await new Promise(r => setTimeout(r, 2000 + Math.random() * 2000))
     }
   } finally {

@@ -45,9 +45,10 @@ function parseItem(item, model, condition) {
   const location = item.City || item.InTransitMetroName || item.VrlName || item.MetroName || null
 
   const apArr = item.AUTOPILOT || []
-  let autopilot = null
-  if (apArr.includes('FULL_SELF_DRIVING')) autopilot = 'FSD'
-  else if (apArr.includes('ENHANCED_AUTOPILOT')) autopilot = 'EAP'
+  const optionCodes = (item.OptionCodeData || []).map(o => (o.code || '').replace(/^\$/, ''))
+let autopilot = null
+  if (apArr.includes('FULL_SELF_DRIVING') || optionCodes.includes('APPF')) autopilot = 'FSD'
+  else if (apArr.includes('ENHANCED_AUTOPILOT') || optionCodes.includes('APPB')) autopilot = 'EAP'
 
   return {
     source: 'tesla',
@@ -73,7 +74,7 @@ function parseItem(item, model, condition) {
   }
 }
 
-async function scrape({ models = MODELS } = {}) {
+async function scrape({ models = MODELS, onPage } = {}) {
   const all = []
   for (const model of models) {
     for (const condition of CONDITIONS) {
@@ -83,6 +84,7 @@ async function scrape({ models = MODELS } = {}) {
         console.log(`  -> ${results.length} results`)
         const listings = results.map(item => parseItem(item, model, condition)).filter(Boolean)
         all.push(...listings)
+        if (onPage && listings.length > 0) await onPage(listings)
       } catch (err) {
         console.error(`  ! failed for ${model}/${condition}: ${err.message}`)
       }

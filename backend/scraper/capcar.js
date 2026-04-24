@@ -73,7 +73,7 @@ async function algoliaQuery(page) {
   return res.json()
 }
 
-async function scrape({ pages = 10 } = {}) {
+async function scrape({ pages = 10, onPage } = {}) {
   const results = new Map()
   let page = 0
 
@@ -84,14 +84,20 @@ async function scrape({ pages = 10 } = {}) {
     const nbPages = payload.nbPages || 1
     console.log(`  -> ${hits.length} hits (page ${page + 1}/${nbPages})`)
 
+    const pageListings = []
     for (const hit of hits) {
       try {
         const listing = parseHit(hit)
-        if (listing && !results.has(listing.external_id)) results.set(listing.external_id, listing)
+        if (listing && !results.has(listing.external_id)) {
+          results.set(listing.external_id, listing)
+          pageListings.push(listing)
+        }
       } catch (err) {
         console.error(`  ! parse failed for ${hit.reference}: ${err.message}`)
       }
     }
+
+    if (onPage && pageListings.length > 0) await onPage(pageListings)
 
     page++
     if (page >= nbPages || page >= pages) break

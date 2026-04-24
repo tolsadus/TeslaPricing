@@ -137,7 +137,7 @@ async function fetchPage(url) {
   return new TextDecoder('utf-8').decode(buf)
 }
 
-async function scrape({ pages = 1 } = {}) {
+async function scrape({ pages = 1, onPage } = {}) {
   const all = new Map()
   for (let page = 1; page <= pages; page++) {
     const url = buildPageUrl(page)
@@ -146,7 +146,9 @@ async function scrape({ pages = 1 } = {}) {
       const html = await fetchPage(url)
       const results = parsePage(html)
       console.log(`  -> ${results.length} listings`)
+      const pageListings = results.filter(l => !all.has(l.external_id))
       for (const l of results) all.set(l.external_id, l)
+      if (onPage && pageListings.length > 0) await onPage(pageListings)
     } catch (err) {
       console.error(`  ! fetch failed: ${err.message}`)
     }

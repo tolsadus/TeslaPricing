@@ -135,7 +135,7 @@ async function isCaptchaPage(page) {
   }
 }
 
-async function scrape({ pages = 1, headed = false, debug = false } = {}) {
+async function scrape({ pages = 1, headed = false, debug = false, onPage } = {}) {
   fs.mkdirSync(PROFILE_DIR, { recursive: true })
 
   const context = await chromium.launchPersistentContext(PROFILE_DIR, {
@@ -191,7 +191,9 @@ async function scrape({ pages = 1, headed = false, debug = false } = {}) {
 
       const listings = await extractFromDom(page)
       console.log(`  -> ${listings.length} listings`)
+      const pageListings = listings.filter(l => !all.has(l.external_id))
       for (const l of listings) all.set(l.external_id, l)
+      if (onPage && pageListings.length > 0) await onPage(pageListings)
 
       if (p < pages) await new Promise(r => setTimeout(r, 3000 + Math.random() * 3000))
     }
