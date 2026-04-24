@@ -8,7 +8,9 @@ import Trends from "./Trends";
 import Dropped from "./Dropped";
 import Details from "./Details";
 import Saved from "./Saved";
+import Compare from "./Compare";
 import { useSaved } from "./useSaved";
+import { useCompare } from "./useCompare";
 import { useAuth } from "./useAuth";
 import { useTranslation } from "./i18n";
 import type { Listing, ListingFilters } from "./types";
@@ -64,12 +66,13 @@ function parseListingId(hash: string): number | null {
   return m ? Number(m[1]) : null;
 }
 
-function parsePage(hash: string): "listings" | "trends" | "detail" | "dropped" | "details" | "watchlist" {
+function parsePage(hash: string): "listings" | "trends" | "detail" | "dropped" | "details" | "watchlist" | "compare" {
   if (hash.startsWith("#/listing/")) return "detail";
   if (hash === "#/trends") return "trends";
   if (hash === "#/dropped") return "dropped";
   if (hash === "#/details") return "details";
   if (hash === "#/watchlist") return "watchlist";
+  if (hash === "#/compare") return "compare";
   return "listings";
 }
 
@@ -185,6 +188,7 @@ export default function App() {
   const { user, isAdmin, signOut, signInWithGoogle, signInWithGithub } = useAuth();
   const [showAuthMenu, setShowAuthMenu] = useState(false);
   const { toggle, isSaved, saved } = useSaved(user);
+  const { ids: compareIds, toggle: toggleCompare, clear: clearCompare, isComparing } = useCompare();
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -241,6 +245,7 @@ export default function App() {
           <a className={`nav-link ${page === "dropped" ? "active" : ""}`} href="#/dropped">{t("nav_deals")}</a>
           <a className={`nav-link ${page === "trends" ? "active" : ""}`} href="#/trends">{t("nav_trends")}</a>
           <a className={`nav-link ${page === "watchlist" ? "active" : ""}`} href="#/watchlist">{t("nav_watchlist")} {saved.size > 0 && <span className="nav-count">{saved.size}</span>}</a>
+          <a className={`nav-link ${page === "compare" ? "active" : ""}`} href="#/compare">{t("nav_compare")} {compareIds.length > 0 && <span className="nav-count">{compareIds.length}</span>}</a>
           {isAdmin && <a className={`nav-link ${page === "details" ? "active" : ""}`} href="#/details">{t("nav_details")}</a>}
         </nav>
         <div className="topbar-meta">
@@ -274,6 +279,8 @@ export default function App() {
         <Saved saved={saved} toggle={toggle} />
       ) : page === "details" && isAdmin ? (
         <Details />
+      ) : page === "compare" ? (
+        <Compare ids={compareIds} onRemove={toggleCompare} onClear={clearCompare} />
       ) : (
         <>
           <div className="page-hero">
@@ -473,6 +480,7 @@ export default function App() {
                     <div className="card-img-wrap">
                       {listing.image_url && <img src={listing.image_url} alt={listing.title} referrerPolicy="no-referrer" />}
                       <button className={`bookmark-btn${isSaved(listing.id) ? " active" : ""}`} onClick={() => { if (!user) { setShowAuthMenu(true); return; } toggle(listing.id); }} aria-label={t("save_listing")}>🔖</button>
+                      <button className={`compare-btn${isComparing(listing.id) ? " active" : ""}${compareIds.length >= 3 && !isComparing(listing.id) ? " disabled" : ""}`} onClick={() => { if (compareIds.length < 3 || isComparing(listing.id)) toggleCompare(listing.id); }} aria-label={t("compare_add")} title={t("compare_add")}>⊕</button>
                     </div>
                     <div className="card-body">
                       <h3>{listing.title}</h3>
@@ -506,6 +514,14 @@ export default function App() {
             </main>
           </div>
         </>
+      )}
+
+      {compareIds.length > 0 && page !== "compare" && (
+        <div className="compare-bar">
+          <span className="compare-bar-label">{t("compare_view_btn", { n: compareIds.length })}</span>
+          <a className="btn btn-primary btn-sm" href="#/compare">{t("nav_compare")}</a>
+          <button className="btn btn-secondary btn-sm" onClick={clearCompare}>{t("compare_clear")}</button>
+        </div>
       )}
 
       {showAuthMenu && (

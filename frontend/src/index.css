@@ -1315,3 +1315,145 @@ code {
 }
 .status-badge.ok      { background: #d1fae5; color: #065f46; }
 .status-badge.missing { background: #fee2e2; color: #991b1b; }
+
+/* ── Compare button on cards ─────────────────────────────────── */
+.compare-btn {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(4px);
+  color: #555;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s, transform 0.15s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+}
+.compare-btn:hover { background: #fff; color: #171a20; transform: scale(1.1); }
+.compare-btn.active { background: #171a20; color: #fff; }
+.compare-btn.disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* ── Floating compare bar ────────────────────────────────────── */
+.compare-bar {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: #171a20;
+  color: #fff;
+  padding: 0.75rem 1.25rem;
+  border-radius: 999px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.28);
+  z-index: 200;
+  animation: bar-in 0.2s ease;
+}
+@keyframes bar-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(12px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+.compare-bar-label { font-size: 0.9rem; font-weight: 600; white-space: nowrap; }
+.compare-bar .btn-primary  { background: #fff; color: #171a20; }
+.compare-bar .btn-secondary { border-color: rgba(255,255,255,0.3); color: #fff; }
+.compare-bar .btn-sm { padding: 0.35rem 0.9rem; font-size: 0.8rem; border-radius: 999px; }
+
+/* ── Compare page ────────────────────────────────────────────── */
+.compare-page { padding: 2rem 2.5rem; max-width: 1400px; margin: 0 auto; }
+.compare-page .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 2rem; }
+
+.cmp-table-wrap { overflow-x: auto; }
+.cmp-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+.cmp-col-label { width: 140px; }
+.cmp-col-data  { min-width: 220px; }
+
+.cmp-header-row th { vertical-align: top; padding: 0 0.75rem 1.25rem; }
+.cmp-header-cell {
+  position: relative;
+  text-align: left;
+  border-left: 1px solid var(--border, #e8e8e8);
+}
+.cmp-header-accent {
+  height: 4px;
+  border-radius: 4px 4px 0 0;
+  margin-bottom: 0.75rem;
+}
+.cmp-photo-wrap { position: relative; }
+.cmp-photo {
+  width: 100%;
+  aspect-ratio: 16/9;
+  object-fit: cover;
+  border-radius: 10px;
+  display: block;
+}
+.cmp-photo-empty { width: 100%; aspect-ratio: 16/9; background: #f3f4f6; border-radius: 10px; }
+.cmp-photo-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+  font-size: 0.8rem;
+  color: #666;
+}
+.cmp-photo-nav button {
+  background: none;
+  border: 1px solid var(--border, #e8e8e8);
+  border-radius: 4px;
+  padding: 0 0.4rem;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1.4;
+}
+.cmp-header-title { font-size: 0.85rem; font-weight: 600; margin: 0.6rem 0 0.2rem; line-height: 1.3; }
+.cmp-header-price { font-size: 1.25rem; font-weight: 700; margin: 0 0 0.6rem; }
+.cmp-header-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.cmp-header-actions .btn-sm { padding: 0.3rem 0.75rem; font-size: 0.78rem; border-radius: 8px; }
+
+.cmp-table tbody tr { border-top: 1px solid var(--border, #e8e8e8); }
+.cmp-table tbody tr:hover { background: #fafafa; }
+.cmp-row-diff { background: #fffbeb !important; }
+.cmp-row-diff:hover { background: #fef9c3 !important; }
+
+.cmp-label {
+  padding: 0.65rem 0.75rem 0.65rem 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #6b7280;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.cmp-value {
+  padding: 0.65rem 0.75rem;
+  font-size: 0.9rem;
+  vertical-align: middle;
+  border-left: 1px solid var(--border, #e8e8e8);
+}
+.cmp-no-data { color: #bbb; }
+
+/* Sparkline */
+.cmp-sparkline-wrap { display: flex; flex-direction: column; gap: 0.25rem; }
+.cmp-sparkline-wrap svg { display: block; }
+.cmp-sparkline-dates { display: flex; justify-content: space-between; font-size: 0.7rem; color: #9ca3af; }
+
+/* Small btn variant */
+.btn.btn-sm { padding: 0.3rem 0.75rem; font-size: 0.8rem; }
+
+@media (max-width: 720px) {
+  .compare-page { padding: 1.25rem 1rem; }
+  .cmp-col-label { width: 90px; }
+  .cmp-col-data  { min-width: 160px; }
+}
