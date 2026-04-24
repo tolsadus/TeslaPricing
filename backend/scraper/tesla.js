@@ -46,9 +46,11 @@ function parseItem(item, model, condition) {
 
   const apArr = item.AUTOPILOT || []
   const optionCodes = (item.OptionCodeData || []).map(o => (o.code || '').replace(/^\$/, ''))
-let autopilot = null
+  let autopilot = null
   if (apArr.includes('FULL_SELF_DRIVING') || optionCodes.includes('APPF')) autopilot = 'FSD'
   else if (apArr.includes('ENHANCED_AUTOPILOT') || optionCodes.includes('APPB')) autopilot = 'EAP'
+
+  const tow_hitch = optionCodes.includes('TW01') || (item.OptionCodeData || []).some(o => o.group === 'TOWING')
 
   return {
     source: 'tesla',
@@ -67,6 +69,7 @@ let autopilot = null
     doors: null,
     seats,
     autopilot,
+    tow_hitch,
     location,
     url: listingUrl(model, vin, condition),
     image_url: compositorImage(model, item.OptionCodeList ?? null),

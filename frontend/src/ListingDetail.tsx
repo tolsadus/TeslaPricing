@@ -174,6 +174,7 @@ export default function ListingDetail({ id, isSaved, onToggle }: { id: number; i
             {listing.seats != null && <div className="spec-item"><span className="spec-label">{t("spec_seats")}</span><span className="spec-value">{listing.seats}</span></div>}
             {listing.soh != null && <div className="spec-item"><span className="spec-label">{t("spec_soh")}</span><span className="spec-value">{listing.soh}%</span></div>}
             {listing.autopilot && <div className="spec-item"><span className="spec-label">{t("spec_autopilot")}</span><span className="spec-value">{listing.autopilot}</span></div>}
+            {listing.tow_hitch && <div className="spec-item"><span className="spec-label">{t("spec_tow_hitch")}</span><span className="spec-value">✓</span></div>}
           </div>
           {listing.location && <p className="location">{listing.location}</p>}
           <p className="scraped-at">{t("card_crawled")} {formatDate(listing.scraped_at)}</p>

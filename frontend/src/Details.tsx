@@ -24,6 +24,7 @@ const FIELDS: FieldDef[] = [
   { key: "seats",       label: "Seats" },
   { key: "soh",         label: "Battery SoH", format: (v) => v != null ? `${v}%` : "" },
   { key: "autopilot",   label: "Autopilot" },
+  { key: "tow_hitch",  label: "Tow hitch", format: (v) => v === true ? "Yes" : v === false ? "No" : "" },
   { key: "price_eur",   label: "Price", format: (v) => v != null ? new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(v as number) : "" },
   { key: "location",    label: "Location" },
   { key: "image_url",   label: "Image URL" },

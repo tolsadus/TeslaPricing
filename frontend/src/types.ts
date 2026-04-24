@@ -25,6 +25,7 @@ export type Listing = {
   doors: number | null;
   seats: number | null;
   autopilot: string | null;
+  tow_hitch: boolean | null;
 };
 
 export type DroppedListing = {
