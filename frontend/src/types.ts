@@ -67,6 +67,8 @@ export type TrendPoint = {
 
 export type ListingFilters = {
   model?: string;
+  drivetrain?: string;
+  autopilot?: string;
   min_price?: number;
   max_price?: number;
   min_year?: number;

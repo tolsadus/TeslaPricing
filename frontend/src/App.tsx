@@ -2,7 +2,7 @@ declare const __GIT_BRANCH__: string;
 declare const __GIT_COMMIT__: string;
 
 import { useEffect, useRef, useState } from "react";
-import { fetchListings, fetchStats } from "./api";
+import { fetchListings, fetchStats, fetchCount } from "./api";
 import ListingDetail from "./ListingDetail";
 import Trends from "./Trends";
 import Dropped from "./Dropped";
@@ -151,6 +151,7 @@ export default function App() {
 
   const LIMIT = 50;
   const [totalCount, setTotalCount] = useState<number | null>(null);
+  const [filteredCount, setFilteredCount] = useState<number | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
   const [filters, setFilters] = useState<ListingFilters>({
     sort_by: "scraped_at",
@@ -186,6 +187,11 @@ export default function App() {
   useEffect(() => {
     fetchStats().then((s) => setTotalCount(s.total)).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    setFilteredCount(null);
+    fetchCount(filters).then(setFilteredCount).catch(() => {});
+  }, [filters]);
 
   useEffect(() => {
     if (page !== "listings") return;
@@ -262,7 +268,12 @@ export default function App() {
             <div className="page-header">
               <div>
                 <h2 className="dropped-title">Listings</h2>
-                <p className="dropped-subtitle">{totalCount ?? "…"} cars from all sources · crawled once a day</p>
+                <p className="dropped-subtitle">
+                  {filters.model
+                    ? <>{filteredCount ?? "…"} {filters.model} in stock</>
+                    : <>Crawled once a day from all sources</>
+                  }
+                </p>
               </div>
             </div>
           </div>
@@ -339,6 +350,20 @@ export default function App() {
 
             {/* ── Main grid ── */}
             <main className="grid-wrap">
+              {(filters.drivetrain || filters.autopilot) && (
+                <div className="active-tag-filters">
+                  {filters.drivetrain && (
+                    <button className="active-tag-chip" onClick={() => setFilters((f) => ({ ...f, drivetrain: undefined }))}>
+                      {filters.drivetrain} ✕
+                    </button>
+                  )}
+                  {filters.autopilot && (
+                    <button className="active-tag-chip" onClick={() => setFilters((f) => ({ ...f, autopilot: undefined }))}>
+                      {filters.autopilot} ✕
+                    </button>
+                  )}
+                </div>
+              )}
               {loading && <p className="state">Loading…</p>}
               {error && <p className="state error">Error: {error}</p>}
               {!loading && !error && listings.length === 0 && (
@@ -355,8 +380,8 @@ export default function App() {
                     <div className="card-body">
                       <h3>{listing.title}</h3>
                       <div className="card-badges">
-                        {(() => { const dt = (listing.drivetrain as keyof typeof DRIVETRAIN_LABEL | null) ?? getDrivetrain(listing); return dt ? <span className={`drivetrain-badge dt-${dt.toLowerCase()}`}>{DRIVETRAIN_LABEL[dt] ?? dt}</span> : null; })()}
-                        {listing.autopilot && <span className={`autopilot-badge ap-${listing.autopilot.toLowerCase()}`}>{listing.autopilot}</span>}
+                        {(() => { const dt = (listing.drivetrain as keyof typeof DRIVETRAIN_LABEL | null) ?? getDrivetrain(listing); return dt ? <span className={`drivetrain-badge dt-${dt.toLowerCase()}${filters.drivetrain === dt ? " badge-active" : " badge-clickable"}`} onClick={() => setFilters((f) => ({ ...f, drivetrain: f.drivetrain === dt ? undefined : dt }))}>{DRIVETRAIN_LABEL[dt] ?? dt}</span> : null; })()}
+                        {listing.autopilot && <span className={`autopilot-badge ap-${listing.autopilot.toLowerCase()}${filters.autopilot === listing.autopilot ? " badge-active" : " badge-clickable"}`} onClick={() => setFilters((f) => ({ ...f, autopilot: f.autopilot === listing.autopilot ? undefined : listing.autopilot! }))}>{listing.autopilot}</span>}
                       </div>
                       <div className="price-row">
                         <p className="price">{formatPrice(listing.price_eur)}</p>
@@ -412,6 +437,17 @@ export default function App() {
           </div>
         </div>
       )}
+
+      <a
+        className="issue-btn"
+        href="https://github.com/tolsadus/TeslaPricing/issues/new"
+        target="_blank"
+        rel="noreferrer"
+        title="Report an issue"
+      >
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm9 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM6.92 6.085c.081-.16.19-.299.34-.398.145-.097.371-.187.74-.187.28 0 .553.087.738.225A.613.613 0 0 1 9 6.25c0 .177-.04.264-.077.318a.956.956 0 0 1-.277.245c-.076.051-.158.1-.258.161l-.007.004a7.728 7.728 0 0 0-.313.208 2.88 2.88 0 0 0-.37.358.75.75 0 0 0 1.063 1.06 1.39 1.39 0 0 1 .167-.165 6.28 6.28 0 0 1 .235-.155l.003-.002c.098-.06.201-.124.308-.197.222-.15.468-.349.667-.620.2-.275.315-.622.315-1.015 0-.658-.316-1.167-.755-1.478C9.878 4.6 9.32 4.5 8.75 4.5c-.63 0-1.156.16-1.572.438-.413.276-.68.646-.828.977a.75.75 0 0 0 1.37.615Z"/></svg>
+        Report an issue
+      </a>
 
       <ScrollToTop />
       <div className="version-badge">

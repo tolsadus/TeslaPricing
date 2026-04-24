@@ -196,6 +196,27 @@
   border-color: var(--text);
 }
 
+.issue-btn {
+  position: fixed;
+  bottom: 12px;
+  left: 14px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--text-mute);
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px 8px;
+  text-decoration: none;
+  z-index: 1000;
+  transition: color 0.15s, border-color 0.15s;
+}
+.issue-btn:hover {
+  color: var(--text);
+  border-color: var(--text-dim);
+}
 .version-badge {
   position: fixed;
   bottom: 12px;
@@ -542,6 +563,36 @@ html, body {
   padding: 0.18rem 0.5rem;
   border-radius: 999px;
 }
+.badge-clickable {
+  cursor: pointer;
+  opacity: 0.9;
+  transition: opacity 0.15s, outline 0.15s;
+}
+.badge-clickable:hover { opacity: 1; outline: 2px solid currentColor; outline-offset: 1px; }
+.badge-active { outline: 2px solid currentColor; outline-offset: 1px; cursor: pointer; }
+.active-tag-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+}
+.active-tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.65rem;
+  background: var(--chip-bg);
+  border: 1.5px solid var(--border-strong);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.active-tag-chip:hover { background: var(--chip-bg-hover); }
 .dt-rwd         { background: #e0f2fe; color: #0369a1; }
 .dt-awd         { background: #ede9fe; color: #6d28d9; }
 .dt-performance { background: #fff7ed; color: #c2410c; }

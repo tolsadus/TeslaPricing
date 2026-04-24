@@ -12,6 +12,8 @@ const SORT_COLUMN: Record<string, string> = {
 export async function fetchListings(filters: ListingFilters = {}): Promise<Listing[]> {
   const {
     model,
+    drivetrain,
+    autopilot,
     min_price,
     max_price,
     min_year,
@@ -34,6 +36,8 @@ export async function fetchListings(filters: ListingFilters = {}): Promise<Listi
     .range(offset, offset + limit - 1);
 
   if (model) query = query.ilike("model", `%${model}%`);
+  if (drivetrain) query = query.eq("drivetrain", drivetrain);
+  if (autopilot) query = query.eq("autopilot", autopilot);
   if (min_price !== undefined) query = query.gte("price_eur", min_price);
   if (max_price !== undefined) query = query.lte("price_eur", max_price);
   if (min_year !== undefined) query = query.gte("year", min_year);
@@ -73,6 +77,21 @@ export async function fetchPhotos(id: number): Promise<string[]> {
     .order("sort_order");
   if (error) throw new Error(error.message);
   return (data ?? []).map((r) => r.url);
+}
+
+export async function fetchCount(filters: Pick<ListingFilters, "model" | "drivetrain" | "autopilot" | "min_price" | "max_price" | "min_year" | "max_year" | "source"> = {}): Promise<number> {
+  let query = supabase.from("listings_with_delta").select("*", { count: "exact", head: true });
+  if (filters.model) query = query.ilike("model", `%${filters.model}%`);
+  if (filters.drivetrain) query = query.eq("drivetrain", filters.drivetrain);
+  if (filters.autopilot) query = query.eq("autopilot", filters.autopilot);
+  if (filters.min_price !== undefined) query = query.gte("price_eur", filters.min_price);
+  if (filters.max_price !== undefined) query = query.lte("price_eur", filters.max_price);
+  if (filters.min_year !== undefined) query = query.gte("year", filters.min_year);
+  if (filters.max_year !== undefined) query = query.lte("year", filters.max_year);
+  if (filters.source) query = query.eq("source", filters.source);
+  const { count, error } = await query;
+  if (error) throw new Error(error.message);
+  return count ?? 0;
 }
 
 export async function fetchStats(): Promise<{ total: number; by_source: Record<string, number> }> {
