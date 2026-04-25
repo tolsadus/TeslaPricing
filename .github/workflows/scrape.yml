@@ -1,0 +1,66 @@
+name: Scrape
+
+on:
+  workflow_dispatch:
+    inputs:
+      scraper:
+        description: Which scraper to run (leave empty to run all)
+        required: false
+        default: ''
+        type: choice
+        options:
+          - ''
+          - tesla
+          - capcar
+          - gmecars
+          - lbauto
+          - renew
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tesla
+        if: inputs.scraper == '' || inputs.scraper == 'tesla'
+        run: node scraper/cli.js tesla
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Run capcar
+        if: inputs.scraper == '' || inputs.scraper == 'capcar'
+        run: node scraper/cli.js capcar --pages 20
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Run gmecars
+        if: inputs.scraper == '' || inputs.scraper == 'gmecars'
+        run: node scraper/cli.js gmecars --pages 5
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Run lbauto
+        if: inputs.scraper == '' || inputs.scraper == 'lbauto'
+        run: node scraper/cli.js lbauto --pages 10
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Run renew
+        if: inputs.scraper == '' || inputs.scraper == 'renew'
+        run: node scraper/cli.js renew --pages 5
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
