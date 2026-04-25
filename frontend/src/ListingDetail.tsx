@@ -18,9 +18,15 @@ function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" });
 }
 
+function formatDateTime(iso: string): string {
+  return new Date(iso).toLocaleString("fr-FR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
 type ChartPoint = { x: number; y: number; price: number; date: string };
+type Tooltip = { x: number; y: number; price: number; date: string } | null;
 
 function PriceChart({ points, emptyMessage }: { points: PricePoint[]; emptyMessage: string }) {
+  const [tooltip, setTooltip] = useState<Tooltip>(null);
   const valid = points.filter((p) => p.price_eur !== null) as { price_eur: number; recorded_at: string }[];
   if (valid.length === 0) {
     return <p className="state">{emptyMessage}</p>;
@@ -60,8 +66,11 @@ function PriceChart({ points, emptyMessage }: { points: PricePoint[]; emptyMessa
   const yTicks = 4;
   const tickValues = Array.from({ length: yTicks + 1 }, (_, i) => minP + ((maxP - minP) * i) / yTicks);
 
+  const TIP_W = 160;
+  const TIP_H = 44;
+
   return (
-    <svg className="chart" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet">
+    <svg className="chart" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" onMouseLeave={() => setTooltip(null)}>
       <defs>
         <linearGradient id="area-grad" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#171a20" stopOpacity="0.18" />
@@ -90,11 +99,30 @@ function PriceChart({ points, emptyMessage }: { points: PricePoint[]; emptyMessa
       <path d={path} fill="none" stroke="#171a20" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
 
       {plotted.slice(0, valid.length).map((pt, i) => (
-        <g key={i}>
-          <circle cx={pt.x} cy={pt.y} r="4" fill="#fff" stroke="#171a20" strokeWidth="2" />
-          <title>{`${formatPrice(pt.price)} — ${formatDate(pt.date)}`}</title>
+        <g key={i}
+          onMouseEnter={() => setTooltip(pt)}
+          style={{ cursor: "default" }}
+        >
+          <circle cx={pt.x} cy={pt.y} r="10" fill="transparent" />
+          <circle cx={pt.x} cy={pt.y} r={tooltip?.date === pt.date ? 6 : 4} fill="#fff" stroke="#171a20" strokeWidth="2" />
         </g>
       ))}
+
+      {tooltip && (() => {
+        const tipX = Math.min(tooltip.x, W - TIP_W - 4);
+        const tipY = tooltip.y - TIP_H - 10 < PAD_T ? tooltip.y + 14 : tooltip.y - TIP_H - 10;
+        return (
+          <g>
+            <rect x={tipX} y={tipY} width={TIP_W} height={TIP_H} rx="6" fill="#171a20" opacity="0.92" />
+            <text x={tipX + TIP_W / 2} y={tipY + 16} textAnchor="middle" fontSize="12" fontWeight="600" fill="#fff">
+              {formatPrice(tooltip.price)}
+            </text>
+            <text x={tipX + TIP_W / 2} y={tipY + 32} textAnchor="middle" fontSize="10" fill="#a0aec0">
+              {formatDateTime(tooltip.date)}
+            </text>
+          </g>
+        );
+      })()}
     </svg>
   );
 }
