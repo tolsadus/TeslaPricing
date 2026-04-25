@@ -209,6 +209,7 @@ export default function App() {
   useEffect(() => {
     if (page !== "listings") return;
     setLoading(true);
+    setLoadingMore(false);
     setError(null);
     setOffset(0);
     fetchListings({ ...filters, offset: 0 })
@@ -221,7 +222,7 @@ export default function App() {
     const el = sentinelRef.current;
     if (!el) return;
     const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting && hasMore && !loadingMore) loadMore(); },
+      ([entry]) => { if (entry.isIntersecting && hasMore && !loadingMore && !loading) loadMore(); },
       { rootMargin: "200px" }
     );
     observer.observe(el);
@@ -469,7 +470,7 @@ export default function App() {
                   )}
                 </div>
               )}
-              {loading && <p className="state">{t("loading")}</p>}
+              {loading && <span className="spinner" />}
               {error && <p className="state error">Error: {error}</p>}
               {!loading && !error && listings.length === 0 && (
                 <p className="state">{t("no_listings")}</p>
@@ -516,7 +517,7 @@ export default function App() {
               </ul>
 
               <div ref={sentinelRef} className="load-more">
-                {loadingMore && <p className="state">{t("loading")}</p>}
+                {loadingMore && <span className="spinner spinner-sm" />}
               </div>
             </main>
           </div>

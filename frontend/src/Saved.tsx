@@ -65,7 +65,7 @@ export default function Saved({ saved, toggle, isComparing, toggleCompare, compa
       )}
 
       <div className="saved-body">
-        {loading && <p className="state">{t("loading")}</p>}
+        {loading && <span className="spinner" />}
         {error && <p className="state error">Error: {error}</p>}
         {!loading && saved.size === 0 && (
           <p className="state">{t("saved_empty")}</p>

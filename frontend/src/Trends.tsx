@@ -207,7 +207,7 @@ export default function Trends() {
       </div>
 
 
-      {loading && <p className="state">{t("loading")}</p>}
+      {loading && <span className="spinner" />}
       {error && <p className="state error">Error: {error}</p>}
 
       {!loading && !error && (

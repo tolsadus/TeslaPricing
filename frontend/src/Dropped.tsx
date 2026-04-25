@@ -65,7 +65,7 @@ export default function Dropped({ isSaved, toggle, isComparing, toggleCompare, c
         </div>
       </div>
 
-      {loading && <p className="state">{t("loading")}</p>}
+      {loading && <span className="spinner" />}
       {!loading && drops.length === 0 && (
         <p className="state">{t("dropped_empty", { hours })}</p>
       )}

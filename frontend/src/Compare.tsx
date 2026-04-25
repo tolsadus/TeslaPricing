@@ -160,7 +160,7 @@ export default function Compare({ ids, onRemove, onClear }: { ids: number[]; onR
         <button className="btn btn-secondary" onClick={onClear}>{t("compare_clear")}</button>
       </div>
 
-      {loading && <p className="state">{t("loading")}</p>}
+      {loading && <span className="spinner" />}
 
       {!loading && loaded.length > 0 && (
         <div className="cmp-table-wrap">

@@ -169,7 +169,7 @@ export default function ListingDetail({ id, isSaved, onToggle }: { id: number; i
   }, [id]);
 
   if (error) return <p className="state error">Error: {error}</p>;
-  if (!listing) return <p className="state">{t("loading")}</p>;
+  if (!listing) return <span className="spinner" />;
 
   const prices = history.map((h) => h.price_eur).filter((p): p is number => p !== null);
   const last = prices[prices.length - 1];
