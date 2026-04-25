@@ -99,7 +99,7 @@ type SpecRow = {
   values: (string | null)[];
 };
 
-function buildSpecs(cols: ColData[], t: (k: any) => string): SpecRow[] {
+function buildSpecs(cols: ColData[], t: (k: any) => string, lang: string): SpecRow[] {
   return [
     { label: t("compare_spec_price"),      values: cols.map((c) => formatPrice(c.listing.price_eur)) },
     { label: t("compare_spec_model"),      values: cols.map((c) => [c.listing.make, c.listing.model, c.listing.version].filter(Boolean).join(" ") || null) },
@@ -108,7 +108,7 @@ function buildSpecs(cols: ColData[], t: (k: any) => string): SpecRow[] {
     { label: t("compare_spec_drivetrain"), values: cols.map((c) => { const dt = (c.listing.drivetrain as any) ?? getDrivetrain(c.listing); return dt ? (DRIVETRAIN_LABEL[dt as keyof typeof DRIVETRAIN_LABEL] ?? dt) : null; }) },
     { label: t("compare_spec_autopilot"),  values: cols.map((c) => c.listing.autopilot ?? null) },
     { label: t("compare_spec_power"),      values: cols.map((c) => c.listing.horse_power != null ? `${c.listing.horse_power} ch` : null) },
-    { label: t("compare_spec_color"),      values: cols.map((c) => formatColor(c.listing.color)) },
+    { label: t("compare_spec_color"),      values: cols.map((c) => formatColor(c.listing.color, lang)) },
     { label: t("compare_spec_seats"),      values: cols.map((c) => c.listing.seats != null ? String(c.listing.seats) : null) },
     { label: t("compare_spec_soh"),        values: cols.map((c) => c.listing.soh != null ? `${c.listing.soh}%` : null) },
     { label: t("compare_spec_source"),     values: cols.map((c) => c.listing.source ?? null) },
@@ -122,7 +122,7 @@ function isDiff(values: (string | null)[]): boolean {
 }
 
 export default function Compare({ ids, onRemove, onClear }: { ids: number[]; onRemove: (id: number) => void; onClear: () => void }) {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const [cols, setCols] = useState<(ColData | null)[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -148,7 +148,7 @@ export default function Compare({ ids, onRemove, onClear }: { ids: number[]; onR
     );
   }
 
-  const specs = loaded.length > 0 ? buildSpecs(loaded, t) : [];
+  const specs = loaded.length > 0 ? buildSpecs(loaded, t, lang) : [];
   let fallbackIdx = 0;
 
   return (

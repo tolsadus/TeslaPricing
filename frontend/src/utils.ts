@@ -30,9 +30,31 @@ export function formatFuel(fuel: string | null, t: (k: any) => string): string {
   return fuel;
 }
 
-export function formatColor(color: string | null): string | null {
+const COLOR_EN: Record<string, string> = {
+  "noir uni":                    "Solid Black",
+  "blanc nacré multicouches":    "Pearl White Multi-Coat",
+  "blanc perle":                 "Pearl White",
+  "bleu marine":                 "Midnight Blue",
+  "bleu outremer métallisé":     "Deep Blue Metallic",
+  "gris nuit métallisé":         "Midnight Silver Metallic",
+  "gris stealth":                "Stealth Grey",
+  "quicksilver":                 "Quicksilver",
+  "rouge multicouches":          "Multi-Coat Red",
+  "rouge ultra":                 "Ultra Red",
+  "noir diamant":                "Diamond Black",
+};
+
+export function formatColor(color: string | null, lang = "fr"): string | null {
   if (!color) return null;
-  return color.replace(/^coloris\s+/i, "").trim();
+  const stripped = color.replace(/^(coloris|peinture)\s+/i, "").trim();
+  if (lang === "en") {
+    const key = stripped.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+    const match = Object.entries(COLOR_EN).find(([k]) =>
+      key === k.normalize("NFD").replace(/[̀-ͯ]/g, "")
+    );
+    if (match) return match[1];
+  }
+  return stripped;
 }
 
 export const DRIVETRAIN_LABEL: Record<Drivetrain, string> = {

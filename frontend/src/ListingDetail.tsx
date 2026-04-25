@@ -123,7 +123,7 @@ function Carousel({ photos, fallback, photoAlt }: { photos: string[]; fallback: 
 }
 
 export default function ListingDetail({ id, isSaved, onToggle }: { id: number; isSaved?: boolean; onToggle?: () => void }) {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const [listing, setListing] = useState<Listing | null>(null);
   const [history, setHistory] = useState<PricePoint[]>([]);
   const [photos, setPhotos] = useState<string[]>([]);
@@ -169,7 +169,7 @@ export default function ListingDetail({ id, isSaved, onToggle }: { id: number; i
             {listing.mileage_km != null && <div className="spec-item"><span className="spec-label">{t("spec_mileage")}</span><span className="spec-value">{listing.mileage_km <= 100 ? t("spec_new") : formatKm(listing.mileage_km)}</span></div>}
             {listing.fuel && <div className="spec-item"><span className="spec-label">{t("spec_fuel")}</span><span className="spec-value">{formatFuel(listing.fuel, t)}</span></div>}
             {listing.horse_power != null && <div className="spec-item"><span className="spec-label">{t("spec_power")}</span><span className="spec-value">{listing.horse_power} ch</span></div>}
-            {listing.color && <div className="spec-item"><span className="spec-label">{t("spec_color")}</span><span className="spec-value">{formatColor(listing.color)}</span></div>}
+            {listing.color && <div className="spec-item"><span className="spec-label">{t("spec_color")}</span><span className="spec-value">{formatColor(listing.color, lang)}</span></div>}
             {listing.doors != null && <div className="spec-item"><span className="spec-label">{t("spec_doors")}</span><span className="spec-value">{listing.doors}</span></div>}
             {listing.seats != null && <div className="spec-item"><span className="spec-label">{t("spec_seats")}</span><span className="spec-value">{listing.seats}</span></div>}
             {listing.soh != null && <div className="spec-item"><span className="spec-label">{t("spec_soh")}</span><span className="spec-value">{listing.soh}%</span></div>}
