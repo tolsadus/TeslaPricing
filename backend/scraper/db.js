@@ -56,7 +56,8 @@ async function upsertBatch(client, rows, now) {
     `INSERT INTO listings
       (source, external_id, title, make, model, version, price_eur, year,
        mileage_km, fuel, gearbox, location, url, image_url, scraped_at,
-       drivetrain, soh, color, horse_power, doors, seats, autopilot, tow_hitch)
+       drivetrain, soh, color, horse_power, doors, seats, autopilot, tow_hitch,
+       auction_date, lot_number, vin)
      SELECT
        unnest($1::text[]),  unnest($2::text[]),  unnest($3::text[]),
        unnest($4::text[]),  unnest($5::text[]),  unnest($6::text[]),
@@ -66,26 +67,33 @@ async function upsertBatch(client, rows, now) {
        unnest($15::timestamptz[]),
        unnest($16::text[]), unnest($17::numeric[]),
        unnest($18::text[]), unnest($19::int[]),  unnest($20::int[]),
-       unnest($21::int[]),  unnest($22::text[]), unnest($23::bool[])
+       unnest($21::int[]),  unnest($22::text[]), unnest($23::bool[]),
+       unnest($24::date[]), unnest($25::text[]), unnest($26::text[])
      ON CONFLICT (source, external_id) DO UPDATE SET
-       title       = EXCLUDED.title,
-       price_eur   = EXCLUDED.price_eur,
-       year        = EXCLUDED.year,
-       mileage_km  = EXCLUDED.mileage_km,
-       fuel        = EXCLUDED.fuel,
-       gearbox     = EXCLUDED.gearbox,
-       location    = EXCLUDED.location,
-       url         = EXCLUDED.url,
-       image_url   = EXCLUDED.image_url,
-       scraped_at  = EXCLUDED.scraped_at,
-       drivetrain  = EXCLUDED.drivetrain,
-       soh         = EXCLUDED.soh,
-       color       = EXCLUDED.color,
-       horse_power = EXCLUDED.horse_power,
-       doors       = EXCLUDED.doors,
-       seats       = EXCLUDED.seats,
-       autopilot   = EXCLUDED.autopilot,
-       tow_hitch   = EXCLUDED.tow_hitch
+       title        = EXCLUDED.title,
+       make         = EXCLUDED.make,
+       model        = EXCLUDED.model,
+       version      = EXCLUDED.version,
+       price_eur    = EXCLUDED.price_eur,
+       year         = EXCLUDED.year,
+       mileage_km   = EXCLUDED.mileage_km,
+       fuel         = EXCLUDED.fuel,
+       gearbox      = EXCLUDED.gearbox,
+       location     = EXCLUDED.location,
+       url          = EXCLUDED.url,
+       image_url    = EXCLUDED.image_url,
+       scraped_at   = EXCLUDED.scraped_at,
+       drivetrain   = EXCLUDED.drivetrain,
+       soh          = EXCLUDED.soh,
+       color        = EXCLUDED.color,
+       horse_power  = EXCLUDED.horse_power,
+       doors        = EXCLUDED.doors,
+       seats        = EXCLUDED.seats,
+       autopilot    = EXCLUDED.autopilot,
+       tow_hitch    = EXCLUDED.tow_hitch,
+       auction_date = EXCLUDED.auction_date,
+       lot_number   = EXCLUDED.lot_number,
+       vin          = COALESCE(EXCLUDED.vin, listings.vin)
      RETURNING id, source, external_id, price_eur`,
     [
       rows.map(r => r.source),
@@ -111,6 +119,9 @@ async function upsertBatch(client, rows, now) {
       rows.map(r => r.seats ?? null),
       rows.map(r => r.autopilot ?? inferAutopilot(r)),
       rows.map(r => r.tow_hitch ?? null),
+      rows.map(r => r.auction_date ?? null),
+      rows.map(r => r.lot_number ?? null),
+      rows.map(r => r.vin ?? null),
     ]
   )
 

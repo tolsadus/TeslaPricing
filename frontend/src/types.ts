@@ -27,6 +27,9 @@ export type Listing = {
   seats: number | null;
   autopilot: string | null;
   tow_hitch: boolean | null;
+  auction_date: string | null;
+  lot_number: string | null;
+  vin: string | null;
 };
 
 export type DroppedListing = {

@@ -6,6 +6,7 @@ import { fetchListings, fetchStats, fetchCount } from "./api";
 import ListingDetail from "./ListingDetail";
 import Trends from "./Trends";
 import Dropped from "./Dropped";
+import Auctions from "./Auctions";
 import Details from "./Details";
 import Saved from "./Saved";
 import Compare from "./Compare";
@@ -17,7 +18,7 @@ import type { Listing, ListingFilters } from "./types";
 import { getDrivetrain, DRIVETRAIN_LABEL, formatFuel } from "./utils";
 
 const MODELS = ["Model S", "Model 3", "Model X", "Model Y"] as const;
-const SOURCES = ["tesla", "leboncoin", "lacentrale", "capcar", "lbauto", "aramisauto", "gmecars", "renew", "heycar"] as const;
+const SOURCES = ["tesla", "leboncoin", "lacentrale", "capcar", "lbauto", "aramisauto", "gmecars", "renew", "heycar", "alcopa"] as const;
 
 
 
@@ -66,10 +67,11 @@ function parseListingId(hash: string): number | null {
   return m ? Number(m[1]) : null;
 }
 
-function parsePage(hash: string): "listings" | "trends" | "detail" | "dropped" | "details" | "watchlist" | "compare" {
+function parsePage(hash: string): "listings" | "trends" | "detail" | "dropped" | "auctions" | "details" | "watchlist" | "compare" {
   if (hash.startsWith("#/listing/")) return "detail";
   if (hash === "#/trends") return "trends";
   if (hash === "#/dropped") return "dropped";
+  if (hash === "#/auctions") return "auctions";
   if (hash === "#/details") return "details";
   if (hash === "#/watchlist") return "watchlist";
   if (hash === "#/compare") return "compare";
@@ -245,6 +247,7 @@ export default function App() {
         <nav className="topbar-nav">
           <a className={`nav-link ${page === "listings" || page === "detail" ? "active" : ""}`} href="#">{t("nav_listings")}</a>
           <a className={`nav-link ${page === "dropped" ? "active" : ""}`} href="#/dropped">{t("nav_deals")}</a>
+          <a className={`nav-link ${page === "auctions" ? "active" : ""}`} href="#/auctions">{t("nav_auctions")}</a>
           <a className={`nav-link ${page === "trends" ? "active" : ""}`} href="#/trends">{t("nav_trends")}</a>
           <a className={`nav-link ${page === "watchlist" ? "active" : ""}`} href="#/watchlist">{t("nav_watchlist")} {saved.size > 0 && <span className="nav-count">{saved.size}</span>}</a>
           <a className={`nav-link ${page === "compare" ? "active" : ""}`} href="#/compare">{t("nav_compare")} {compareIds.length > 0 && <span className="nav-count">{compareIds.length}</span>}</a>
@@ -277,6 +280,8 @@ export default function App() {
         <Trends />
       ) : page === "dropped" ? (
         <Dropped isSaved={isSaved} toggle={toggle} isComparing={isComparing} toggleCompare={toggleCompare} compareCount={compareIds.length} />
+      ) : page === "auctions" ? (
+        <Auctions />
       ) : page === "watchlist" ? (
         <Saved saved={saved} toggle={toggle} isComparing={isComparing} toggleCompare={toggleCompare} compareCount={compareIds.length} />
       ) : page === "details" && isAdmin ? (
@@ -495,6 +500,7 @@ export default function App() {
                       <div className="card-badges">
                         {(() => { const dt = (listing.drivetrain as keyof typeof DRIVETRAIN_LABEL | null) ?? getDrivetrain(listing); return dt ? <span className={`drivetrain-badge dt-${dt.toLowerCase()}${filters.drivetrain === dt ? " badge-active" : " badge-clickable"}`} onClick={() => setFilters((f) => ({ ...f, drivetrain: f.drivetrain === dt ? undefined : dt }))}>{DRIVETRAIN_LABEL[dt] ?? dt}</span> : null; })()}
                         {listing.autopilot && <span className={`autopilot-badge ap-${listing.autopilot.toLowerCase()}${filters.autopilot === listing.autopilot ? " badge-active" : " badge-clickable"}`} onClick={() => setFilters((f) => ({ ...f, autopilot: f.autopilot === listing.autopilot ? undefined : listing.autopilot! }))}>{listing.autopilot}</span>}
+                        {listing.auction_date && <a className="auction-badge badge-clickable" href="#/auctions">🔨 Auction</a>}
                       </div>
                       <div className="price-row">
                         <p className="price">{formatPrice(listing.price_eur)}</p>

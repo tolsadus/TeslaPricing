@@ -124,6 +124,17 @@ export async function fetchTrends(): Promise<TrendPoint[]> {
   return (data ?? []) as TrendPoint[];
 }
 
+export async function fetchAuctions(): Promise<Listing[]> {
+  const { data, error } = await supabase
+    .from("listings_with_delta")
+    .select("*")
+    .not("auction_date", "is", null)
+    .order("auction_date", { ascending: true })
+    .order("lot_number", { ascending: true });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as Listing[];
+}
+
 export async function fetchRecentDrops(hours = 48): Promise<DroppedListing[]> {
   const { data, error } = await supabase.rpc("get_recent_drops", { hours });
   if (error) throw new Error(error.message);

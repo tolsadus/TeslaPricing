@@ -1,1 +1,1 @@
-{"root":["./src/app.tsx","./src/listingdetail.tsx","./src/trends.tsx","./src/api.ts","./src/main.tsx","./src/supabase.ts","./src/types.ts"],"version":"5.9.3"}
+{"root":["./src/app.tsx","./src/auctions.tsx","./src/compare.tsx","./src/details.tsx","./src/dropped.tsx","./src/listingdetail.tsx","./src/saved.tsx","./src/trends.tsx","./src/api.ts","./src/i18n.tsx","./src/main.tsx","./src/supabase.ts","./src/types.ts","./src/useauth.ts","./src/usecompare.ts","./src/usesaved.ts","./src/utils.ts"],"version":"5.9.3"}

@@ -113,6 +113,17 @@ program
   })
 
 program
+  .command('alcopa')
+  .description('Scrape Alcopa Auction Tesla listings')
+  .action(async () => {
+    const { scrape } = require('./alcopa')
+    const total = { count: 0 }
+    await scrape({ onPage: makeOnPage(total) })
+    console.log(`\nDone. Upserted ${total.count} listings.`)
+    await pool.end()
+  })
+
+program
   .command('lacentrale')
   .description('Scrape La Centrale Tesla listings via Playwright')
   .option('--pages <n>', 'number of pages', v => parseInt(v, 10), 1)
