@@ -12,7 +12,6 @@ on:
         type: choice
         options:
           - ''
-          - alcopa
           - capcar
           - gmecars
           - heycar
@@ -37,12 +36,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Run alcopa
-        if: inputs.scraper == '' || inputs.scraper == 'alcopa'
-        run: node scraper/cli.js alcopa
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: Run capcar
         if: inputs.scraper == '' || inputs.scraper == 'capcar'
