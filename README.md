@@ -1,5 +1,8 @@
 # TeslaPricing
 
+[![Scrape](https://github.com/tolsadus/TeslaPricing/actions/workflows/scrape.yml/badge.svg)](https://github.com/tolsadus/TeslaPricing/actions/workflows/scrape.yml)
+[![Deploy to GitHub Pages](https://github.com/tolsadus/TeslaPricing/actions/workflows/deploy.yml/badge.svg)](https://github.com/tolsadus/TeslaPricing/actions/workflows/deploy.yml)
+
 Aggregated Tesla used-car listings scraped from multiple French marketplaces. React frontend backed directly by Supabase, with a Node.js scraper suite.
 
 ## Features
