@@ -1,6 +1,7 @@
 # TeslaPricing
 
 [![Scrape](https://github.com/tolsadus/TeslaPricing/actions/workflows/scrape.yml/badge.svg)](https://github.com/tolsadus/TeslaPricing/actions/workflows/scrape.yml)
+![Last Scrape](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.github.com%2Frepos%2Ftolsadus%2FTeslaPricing%2Factions%2Fworkflows%2Fscrape.yml%2Fruns%3Fstatus%3Dsuccess%26per_page%3D1&query=%24.workflow_runs%5B0%5D.updated_at&label=last%20scrape&color=green)
 [![Deploy to GitHub Pages](https://github.com/tolsadus/TeslaPricing/actions/workflows/deploy.yml/badge.svg)](https://github.com/tolsadus/TeslaPricing/actions/workflows/deploy.yml)
 
 Aggregated Tesla used-car listings scraped from multiple French marketplaces. React frontend backed directly by Supabase, with a Node.js scraper suite.
