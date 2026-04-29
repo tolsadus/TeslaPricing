@@ -135,6 +135,23 @@ export async function fetchAuctions(): Promise<Listing[]> {
   return (data ?? []) as Listing[];
 }
 
+export async function searchListings(q: string, limit = 8): Promise<Listing[]> {
+  const v = `%${q.replace(/[%,]/g, "")}%`;
+  const { data, error } = await supabase
+    .from("listings_with_delta")
+    .select("*")
+    .or(`title.ilike.${v},vin.ilike.${v},version.ilike.${v},model.ilike.${v}`)
+    .order("scraped_at", { ascending: false, nullsFirst: false })
+    .limit(limit);
+  if (error) throw new Error(error.message);
+  return (data ?? []) as Listing[];
+}
+
+export async function fetchModelCounts(models: readonly string[]): Promise<Record<string, number>> {
+  const counts = await Promise.all(models.map((m) => fetchCount({ model: m })));
+  return Object.fromEntries(models.map((m, i) => [m, counts[i]]));
+}
+
 export async function fetchRecentDrops(hours = 48): Promise<DroppedListing[]> {
   const { data, error } = await supabase.rpc("get_recent_drops", { hours });
   if (error) throw new Error(error.message);

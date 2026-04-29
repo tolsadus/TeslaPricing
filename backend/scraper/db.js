@@ -193,6 +193,10 @@ async function upsert(rows) {
   return count
 }
 
+async function refreshDelta() {
+  await pool.query('SELECT public.refresh_listings_with_delta()')
+}
+
 async function deleteStaleAuctions(source, daysOld = 2) {
   const res = await pool.query(
     `DELETE FROM listings
@@ -205,4 +209,4 @@ async function deleteStaleAuctions(source, daysOld = 2) {
   return res.rowCount
 }
 
-module.exports = { pool, upsert, deleteStaleAuctions }
+module.exports = { pool, upsert, deleteStaleAuctions, refreshDelta }

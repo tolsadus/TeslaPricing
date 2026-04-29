@@ -10,6 +10,7 @@ import Auctions from "./Auctions";
 import Details from "./Details";
 import Saved from "./Saved";
 import Compare from "./Compare";
+import SearchBar from "./SearchBar";
 import { useSaved } from "./useSaved";
 import { useHidden } from "./useHidden";
 import { useCompare } from "./useCompare";
@@ -247,7 +248,14 @@ export default function App() {
   return (
     <div className="app">
       <div className="topbar">
-        <a className="brand" href="#">TeslaPricing</a>
+        <div className="topbar-left">
+          <a className="brand" href="#">TeslaPricing</a>
+          <SearchBar
+            onApplyFilters={(patch) => {
+              setFilters((f) => ({ ...f, ...patch }));
+            }}
+          />
+        </div>
         <nav className="topbar-nav">
           <a className={`nav-link ${page === "listings" || page === "detail" ? "active" : ""}`} href="#">{t("nav_listings")}</a>
           <a className={`nav-link ${page === "dropped" ? "active" : ""}`} href="#/dropped">{t("nav_deals")}</a>

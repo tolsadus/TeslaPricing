@@ -2,7 +2,17 @@
 'use strict'
 
 const { Command } = require('commander')
-const { upsert, pool, deleteStaleAuctions } = require('./db')
+const { upsert, pool, deleteStaleAuctions, refreshDelta } = require('./db')
+
+async function finalize() {
+  try {
+    await refreshDelta()
+    console.log('Refreshed listings_with_delta.')
+  } catch (err) {
+    console.error('Failed to refresh listings_with_delta:', err.message)
+  }
+  await finalize()
+}
 
 function makeOnPage(total) {
   return async (listings) => {
@@ -24,7 +34,7 @@ program
     const total = { count: 0 }
     await scrape({ pages, onPage: makeOnPage(total) })
     console.log(`\nDone. Upserted ${total.count} listings.`)
-    await pool.end()
+    await finalize()
   })
 
 program
@@ -36,7 +46,7 @@ program
     const total = { count: 0 }
     await scrape({ pages, onPage: makeOnPage(total) })
     console.log(`\nDone. Upserted ${total.count} listings.`)
-    await pool.end()
+    await finalize()
   })
 
 program
@@ -49,7 +59,7 @@ program
     const total = { count: 0 }
     await scrape({ pages, headed, onPage: makeOnPage(total) })
     console.log(`\nDone. Upserted ${total.count} listings.`)
-    await pool.end()
+    await finalize()
   })
 
 program
@@ -61,7 +71,7 @@ program
     const total = { count: 0 }
     await scrape({ models: models.split(','), onPage: makeOnPage(total) })
     console.log(`\nDone. Upserted ${total.count} listings.`)
-    await pool.end()
+    await finalize()
   })
 
 program
@@ -74,7 +84,7 @@ program
     const total = { count: 0 }
     await scrape({ pages, headed, onPage: makeOnPage(total) })
     console.log(`\nDone. Upserted ${total.count} listings.`)
-    await pool.end()
+    await finalize()
   })
 
 program
@@ -86,7 +96,7 @@ program
     const total = { count: 0 }
     await scrape({ pages, onPage: makeOnPage(total) })
     console.log(`\nDone. Upserted ${total.count} listings.`)
-    await pool.end()
+    await finalize()
   })
 
 program
@@ -98,7 +108,7 @@ program
     const total = { count: 0 }
     await scrape({ pages, onPage: makeOnPage(total) })
     console.log(`\nDone. Upserted ${total.count} listings.`)
-    await pool.end()
+    await finalize()
   })
 
 program
@@ -109,7 +119,7 @@ program
     const total = { count: 0 }
     await scrape({ onPage: makeOnPage(total) })
     console.log(`\nDone. Upserted ${total.count} listings.`)
-    await pool.end()
+    await finalize()
   })
 
 program
@@ -122,7 +132,7 @@ program
     console.log(`\nDone. Upserted ${total.count} listings.`)
     const removed = await deleteStaleAuctions('alcopa', 2)
     console.log(`Removed ${removed} alcopa auctions older than 2 days.`)
-    await pool.end()
+    await finalize()
   })
 
 program
@@ -136,13 +146,13 @@ program
     const lacentrale = require('./lacentrale')
     if (login) {
       await lacentrale.login()
-      await pool.end()
+      await finalize()
       return
     }
     const total = { count: 0 }
     await lacentrale.scrape({ pages, headed, debug, onPage: makeOnPage(total) })
     console.log(`\nDone. Upserted ${total.count} listings.`)
-    await pool.end()
+    await finalize()
   })
 
 program.parseAsync(process.argv).catch(err => {

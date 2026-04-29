@@ -162,6 +162,13 @@ const en = {
   compare_spec_location: "Location",
   compare_price_history: "Price history",
   compare_open: "View listing",
+  // Search
+  search_placeholder: "Search a model or VIN…",
+  search_models: "Models",
+  search_suggested: "Suggested search",
+  search_listings: "Listings",
+  search_for_sale: "for sale",
+  search_no_match: "No matches",
 } as const;
 
 export type T = typeof en;
@@ -326,6 +333,13 @@ const fr: Record<TKey, string> = {
   compare_spec_location: "Localisation",
   compare_price_history: "Historique des prix",
   compare_open: "Voir l'annonce",
+  // Search
+  search_placeholder: "Rechercher un modèle ou un VIN…",
+  search_models: "Modèles",
+  search_suggested: "Recherche suggérée",
+  search_listings: "Annonces",
+  search_for_sale: "à vendre",
+  search_no_match: "Aucun résultat",
 };
 
 const translations: Record<Lang, Record<TKey, string>> = { en, fr };
