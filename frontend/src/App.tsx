@@ -11,6 +11,7 @@ import Details from "./Details";
 import Saved from "./Saved";
 import Compare from "./Compare";
 import { useSaved } from "./useSaved";
+import { useHidden } from "./useHidden";
 import { useCompare } from "./useCompare";
 import { useAuth } from "./useAuth";
 import { useTranslation } from "./i18n";
@@ -192,6 +193,8 @@ export default function App() {
   const { user, isAdmin, signOut, signInWithGoogle, signInWithGithub } = useAuth();
   const [showAuthMenu, setShowAuthMenu] = useState(false);
   const { toggle, isSaved, saved } = useSaved(user);
+  const { toggle: toggleHidden, isHidden, hidden } = useHidden(user);
+  const [showHidden, setShowHidden] = useState(false);
   const { ids: compareIds, toggle: toggleCompare, clear: clearCompare, isComparing } = useCompare();
   const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -482,12 +485,21 @@ export default function App() {
                 <p className="state">{t("no_listings")}</p>
               )}
 
+              {hidden.size > 0 && (
+                <div className="hidden-toggle-row">
+                  <button className="hidden-toggle-btn" onClick={() => setShowHidden((v) => !v)}>
+                    {showHidden ? t("hidden_hide_count", { n: hidden.size }) : t("hidden_show_count", { n: hidden.size })}
+                  </button>
+                </div>
+              )}
+
               <ul className="grid">
-                {listings.map((listing) => (
-                  <li key={listing.id} className="card">
+                {listings.filter((l) => showHidden || !isHidden(l.id)).map((listing) => (
+                  <li key={listing.id} className={`card${isHidden(listing.id) ? " card-hidden" : ""}`}>
                     <div className="card-img-wrap">
                       {listing.image_url && <img src={listing.image_url} alt={listing.title} referrerPolicy="no-referrer" />}
                       <button className={`bookmark-btn${isSaved(listing.id) ? " active" : ""}`} onClick={() => toggle(listing.id)} aria-label={t("save_listing")}>🔖</button>
+                      <button className={`hide-btn${isHidden(listing.id) ? " active" : ""}`} onClick={() => toggleHidden(listing.id)} aria-label={isHidden(listing.id) ? t("unhide_listing") : t("hide_listing")} title={isHidden(listing.id) ? t("unhide_listing") : t("hide_listing")}>{isHidden(listing.id) ? "🙈" : "👁"}</button>
                       <button className={`compare-btn${isComparing(listing.id) ? " active" : ""}${compareIds.length >= 3 && !isComparing(listing.id) ? " disabled" : ""}`} onClick={() => { if (compareIds.length < 3 || isComparing(listing.id)) toggleCompare(listing.id); }} aria-label={t("compare_add")} title={t("compare_add")}>⊕</button>
                       {listing.price_delta !== null && listing.price_delta > 0 && listing.max_price !== null && (
                         <div className="card-drop-badge">

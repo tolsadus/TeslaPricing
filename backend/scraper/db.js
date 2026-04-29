@@ -57,7 +57,7 @@ async function upsertBatch(client, rows, now) {
       (source, external_id, title, make, model, version, price_eur, year,
        mileage_km, fuel, gearbox, location, url, image_url, scraped_at,
        drivetrain, soh, color, horse_power, doors, seats, autopilot, tow_hitch,
-       auction_date, lot_number, vin)
+       auction_date, lot_number, vin, ct_url)
      SELECT
        unnest($1::text[]),  unnest($2::text[]),  unnest($3::text[]),
        unnest($4::text[]),  unnest($5::text[]),  unnest($6::text[]),
@@ -68,7 +68,8 @@ async function upsertBatch(client, rows, now) {
        unnest($16::text[]), unnest($17::numeric[]),
        unnest($18::text[]), unnest($19::int[]),  unnest($20::int[]),
        unnest($21::int[]),  unnest($22::text[]), unnest($23::bool[]),
-       unnest($24::date[]), unnest($25::text[]), unnest($26::text[])
+       unnest($24::date[]), unnest($25::text[]), unnest($26::text[]),
+       unnest($27::text[])
      ON CONFLICT (source, external_id) DO UPDATE SET
        title        = EXCLUDED.title,
        make         = EXCLUDED.make,
@@ -93,7 +94,8 @@ async function upsertBatch(client, rows, now) {
        tow_hitch    = EXCLUDED.tow_hitch,
        auction_date = EXCLUDED.auction_date,
        lot_number   = EXCLUDED.lot_number,
-       vin          = COALESCE(EXCLUDED.vin, listings.vin)
+       vin          = COALESCE(EXCLUDED.vin, listings.vin),
+       ct_url       = COALESCE(EXCLUDED.ct_url, listings.ct_url)
      RETURNING id, source, external_id, price_eur`,
     [
       rows.map(r => r.source),
@@ -122,6 +124,7 @@ async function upsertBatch(client, rows, now) {
       rows.map(r => r.auction_date ?? null),
       rows.map(r => r.lot_number ?? null),
       rows.map(r => r.vin ?? null),
+      rows.map(r => r.ct_url ?? null),
     ]
   )
 
@@ -190,4 +193,16 @@ async function upsert(rows) {
   return count
 }
 
-module.exports = { pool, upsert }
+async function deleteStaleAuctions(source, daysOld = 2) {
+  const res = await pool.query(
+    `DELETE FROM listings
+     WHERE source = $1
+       AND auction_date IS NOT NULL
+       AND auction_date < CURRENT_DATE - ($2 || ' days')::interval
+     RETURNING id`,
+    [source, String(daysOld)]
+  )
+  return res.rowCount
+}
+
+module.exports = { pool, upsert, deleteStaleAuctions }

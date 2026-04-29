@@ -2,7 +2,7 @@
 'use strict'
 
 const { Command } = require('commander')
-const { upsert, pool } = require('./db')
+const { upsert, pool, deleteStaleAuctions } = require('./db')
 
 function makeOnPage(total) {
   return async (listings) => {
@@ -120,6 +120,8 @@ program
     const total = { count: 0 }
     await scrape({ onPage: makeOnPage(total) })
     console.log(`\nDone. Upserted ${total.count} listings.`)
+    const removed = await deleteStaleAuctions('alcopa', 2)
+    console.log(`Removed ${removed} alcopa auctions older than 2 days.`)
     await pool.end()
   })
 

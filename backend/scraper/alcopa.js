@@ -90,6 +90,7 @@ function parseListings(html) {
         gearbox:     'Automatique',
         color:       null, // filled in by fetchDetail
         vin:         null, // filled in by fetchDetail
+        ct_url:      null, // filled in by fetchDetail
         horse_power: null,
         doors:       null,
         seats:       null,
@@ -127,7 +128,9 @@ function parseDetail(html) {
   }
   const vin = tableRow('Numéro de série')
   const color = tableRow('Couleur')
-  return { vin, color }
+  const ctMatch = html.match(/href="(\/getDocument\/ct\/[^"]+)"/i)
+  const ct_url = ctMatch ? `${BASE_URL}${ctMatch[1]}` : null
+  return { vin, color, ct_url }
 }
 
 async function scrape({ onPage } = {}) {
@@ -140,9 +143,10 @@ async function scrape({ onPage } = {}) {
     for (const listing of listings) {
       try {
         const detailHtml = await fetchHtml(listing.url)
-        const { vin, color } = parseDetail(detailHtml)
+        const { vin, color, ct_url } = parseDetail(detailHtml)
         listing.vin = vin
         listing.color = color
+        listing.ct_url = ct_url
         if (vin) console.log(`  [${listing.external_id}] VIN: ${vin}`)
       } catch (err) {
         console.error(`  ! detail fetch failed for ${listing.external_id}: ${err.message}`)

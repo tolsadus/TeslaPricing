@@ -39,6 +39,7 @@ export default function Auctions() {
     return acc;
   }, {});
 
+  const todayStr = new Date().toISOString().slice(0, 10);
   const sortedDates = Object.keys(grouped).sort();
 
   return (
@@ -59,12 +60,17 @@ export default function Auctions() {
           <p className="state">{t("auctions_empty")}</p>
         )}
 
-        {sortedDates.map((date) => (
-          <div key={date} className="auction-group">
-            <h3 className="auction-date-header">
+        {sortedDates.map((date) => {
+          const finished = date !== "unknown" && date < todayStr;
+          const count = grouped[date].length;
+          const header = (
+            <>
               <span className="auction-date-icon">🗓</span>
               {formatAuctionDate(date, locale)}
-            </h3>
+              {finished && <span className="auction-finished-badge">{t("auctions_finished")} · {count}</span>}
+            </>
+          );
+          const list = (
             <ul className="auction-list">
               {grouped[date].map((listing) => {
                 const dt = listing.drivetrain as keyof typeof DRIVETRAIN_LABEL | null;
@@ -85,6 +91,11 @@ export default function Auctions() {
                       <p className="auction-card-meta">
                         {listing.year ?? "—"} · {formatKm(listing.mileage_km, locale)} · {listing.location ?? "—"}
                       </p>
+                      {listing.ct_url && (
+                        <a className="auction-ct-link" href={listing.ct_url} target="_blank" rel="noreferrer">
+                          📄 {t("auctions_ct")}
+                        </a>
+                      )}
                     </div>
                     <div className="auction-card-price">
                       <p className="auction-price">
@@ -98,8 +109,18 @@ export default function Auctions() {
                 );
               })}
             </ul>
-          </div>
-        ))}
+          );
+          return (
+            <details
+              key={date}
+              className={`auction-group${finished ? " auction-group-finished" : ""}`}
+              open={!finished}
+            >
+              <summary className="auction-date-header">{header}</summary>
+              {list}
+            </details>
+          );
+        })}
       </div>
     </div>
   );

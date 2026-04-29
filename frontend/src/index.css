@@ -1407,6 +1407,46 @@ code {
 .compare-btn.active { background: #171a20; color: #fff; }
 .compare-btn.disabled { opacity: 0.35; cursor: not-allowed; }
 
+.hide-btn {
+  position: absolute;
+  top: 0.5rem;
+  left: 3rem;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(4px);
+  color: #555;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s, transform 0.15s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+}
+.hide-btn:hover { background: #fff; color: #171a20; transform: scale(1.1); }
+.hide-btn.active { background: #171a20; color: #fff; }
+
+.card-hidden > .card-img-wrap,
+.card-hidden > .card-body { opacity: 0.45; }
+.card-hidden:hover > .card-img-wrap,
+.card-hidden:hover > .card-body { opacity: 0.75; }
+
+.hidden-toggle-row { margin: 0 0 0.75rem; }
+.hidden-toggle-btn {
+  background: none;
+  border: 1px dashed #d1d5db;
+  border-radius: 999px;
+  color: #6b7280;
+  font-size: 0.78rem;
+  padding: 0.25rem 0.7rem;
+  cursor: pointer;
+}
+.hidden-toggle-btn:hover { border-color: #9ca3af; color: #374151; }
+
 /* ── Floating compare bar ────────────────────────────────────── */
 .compare-bar {
   position: fixed;
@@ -1542,6 +1582,35 @@ code {
   margin-bottom: 1rem;
 }
 .auction-date-icon { font-size: 1rem; }
+.auction-finished-badge {
+  margin-left: 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: #f3f4f6;
+  color: #6b7280;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  padding: 0.15rem 0.45rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.auction-group-finished .auction-card { opacity: 0.55; }
+.auction-group-finished .auction-date-header { color: #6b7280; }
+details.auction-group > summary {
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+details.auction-group > summary::-webkit-details-marker { display: none; }
+details.auction-group > summary::before {
+  content: "▸";
+  display: inline-block;
+  margin-right: 0.4rem;
+  font-size: 0.85rem;
+  color: #9ca3af;
+  transition: transform 0.15s ease;
+}
+details.auction-group[open] > summary::before { transform: rotate(90deg); }
 
 .auction-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.75rem; }
 
@@ -1573,6 +1642,14 @@ code {
 .auction-soh { font-size: 0.72rem; background: #ecfdf5; color: #059669; border-radius: 4px; padding: 0.15rem 0.4rem; font-weight: 600; }
 .auction-card-title { font-size: 0.95rem; font-weight: 600; margin: 0 0 0.2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .auction-card-meta { font-size: 0.82rem; color: #6b7280; margin: 0; }
+.auction-ct-link {
+  display: inline-block;
+  margin-top: 0.4rem;
+  font-size: 0.78rem;
+  color: #2563eb;
+  text-decoration: none;
+}
+.auction-ct-link:hover { text-decoration: underline; }
 
 .auction-card-price { display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem; min-width: 110px; }
 .auction-price { font-size: 1.05rem; font-weight: 700; color: #111; margin: 0; white-space: nowrap; }

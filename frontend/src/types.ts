@@ -30,6 +30,7 @@ export type Listing = {
   auction_date: string | null;
   lot_number: string | null;
   vin: string | null;
+  ct_url: string | null;
 };
 
 export type DroppedListing = {
