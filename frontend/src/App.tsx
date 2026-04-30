@@ -518,7 +518,7 @@ export default function App() {
 
               <ul className="grid">
                 {listings.filter((l) => showHidden || !isHidden(l.id)).map((listing) => (
-                  <li key={listing.id} className={`card${isHidden(listing.id) ? " card-hidden" : ""}`}>
+                  <li key={listing.id} className={`card${isHidden(listing.id) ? " card-hidden" : ""}${listing.removed_at ? " card-removed" : ""}`}>
                     <div className="card-img-wrap">
                       {listing.image_url && <img src={listing.image_url} alt={listing.title} referrerPolicy="no-referrer" />}
                       <button className={`bookmark-btn${isSaved(listing.id) ? " active" : ""}`} onClick={() => toggle(listing.id)} aria-label={t("save_listing")}>🔖</button>

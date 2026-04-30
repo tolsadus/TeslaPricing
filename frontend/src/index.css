@@ -1508,6 +1508,23 @@ code {
 .card-hidden:hover > .card-img-wrap,
 .card-hidden:hover > .card-body { opacity: 0.75; }
 
+.card-removed > .card-img-wrap,
+.card-removed > .card-body { opacity: 0.5; filter: grayscale(0.7); }
+.card-removed > .card-img-wrap::after {
+  content: "Removed";
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  background: rgba(31, 41, 55, 0.85);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  letter-spacing: 0.03em;
+  z-index: 2;
+}
+
 .hidden-toggle-row { margin: 0 0 0.75rem; }
 .hidden-toggle-btn {
   background: none;

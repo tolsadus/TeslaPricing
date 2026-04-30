@@ -2,9 +2,31 @@
 'use strict'
 
 const { Command } = require('commander')
-const { upsert, pool, deleteStaleAuctions, refreshDelta } = require('./db')
+const { upsert, pool, deleteStaleAuctions, refreshDelta, markRemoved, markRemovedByAge } = require('./db')
 
-async function finalize() {
+const STALE_AGE_SOURCES = new Set(['leboncoin', 'lacentrale'])
+const STALE_AGE_DAYS = 7
+
+async function markRemovedFor(source, runStart, total) {
+  try {
+    if (STALE_AGE_SOURCES.has(source)) {
+      const n = await markRemovedByAge(source, STALE_AGE_DAYS)
+      if (n > 0) console.log(`  [db] ${source}: ${n} listings unseen for ${STALE_AGE_DAYS}+ days marked as removed`)
+    } else {
+      if (total.count === 0) {
+        console.log(`  [db] skipping markRemoved for ${source}: no listings upserted`)
+        return
+      }
+      const n = await markRemoved(source, runStart)
+      if (n > 0) console.log(`  [db] ${source}: ${n} listings missed this run marked as removed`)
+    }
+  } catch (err) {
+    console.error(`Failed to mark removed for ${source}:`, err.message)
+  }
+}
+
+async function finalize(source, runStart, total) {
+  if (source && runStart && total) await markRemovedFor(source, runStart, total)
   try {
     await refreshDelta()
     console.log('Refreshed listings_with_delta.')
@@ -32,21 +54,23 @@ program
   .action(async ({ pages }) => {
     const { scrape } = require('./capcar')
     const total = { count: 0 }
+    const runStart = new Date().toISOString()
     await scrape({ pages, onPage: makeOnPage(total) })
     console.log(`\nDone. Upserted ${total.count} listings.`)
-    await finalize()
+    await finalize('capcar', runStart, total)
   })
 
 program
   .command('gmecars')
   .description('Scrape GMECars listings')
-  .option('--pages <n>', 'number of pages', v => parseInt(v, 10), 1)
+  .option('--pages <n>', 'number of pages', v => parseInt(v, 10), 10)
   .action(async ({ pages }) => {
     const { scrape } = require('./gmecars')
     const total = { count: 0 }
+    const runStart = new Date().toISOString()
     await scrape({ pages, onPage: makeOnPage(total) })
     console.log(`\nDone. Upserted ${total.count} listings.`)
-    await finalize()
+    await finalize('gmecars', runStart, total)
   })
 
 program
@@ -57,9 +81,10 @@ program
   .action(async ({ pages, headed }) => {
     const { scrape } = require('./leboncoin')
     const total = { count: 0 }
+    const runStart = new Date().toISOString()
     await scrape({ pages, headed, onPage: makeOnPage(total) })
     console.log(`\nDone. Upserted ${total.count} listings.`)
-    await finalize()
+    await finalize('leboncoin', runStart, total)
   })
 
 program
@@ -69,9 +94,10 @@ program
   .action(async ({ models }) => {
     const { scrape } = require('./tesla')
     const total = { count: 0 }
+    const runStart = new Date().toISOString()
     await scrape({ models: models.split(','), onPage: makeOnPage(total) })
     console.log(`\nDone. Upserted ${total.count} listings.`)
-    await finalize()
+    await finalize('tesla', runStart, total)
   })
 
 program
@@ -82,9 +108,10 @@ program
   .action(async ({ pages, headed }) => {
     const { scrape } = require('./aramisauto')
     const total = { count: 0 }
+    const runStart = new Date().toISOString()
     await scrape({ pages, headed, onPage: makeOnPage(total) })
     console.log(`\nDone. Upserted ${total.count} listings.`)
-    await finalize()
+    await finalize('aramisauto', runStart, total)
   })
 
 program
@@ -94,9 +121,10 @@ program
   .action(async ({ pages }) => {
     const { scrape } = require('./renew')
     const total = { count: 0 }
+    const runStart = new Date().toISOString()
     await scrape({ pages, onPage: makeOnPage(total) })
     console.log(`\nDone. Upserted ${total.count} listings.`)
-    await finalize()
+    await finalize('renew', runStart, total)
   })
 
 program
@@ -106,9 +134,10 @@ program
   .action(async ({ pages }) => {
     const { scrape } = require('./lbauto')
     const total = { count: 0 }
+    const runStart = new Date().toISOString()
     await scrape({ pages, onPage: makeOnPage(total) })
     console.log(`\nDone. Upserted ${total.count} listings.`)
-    await finalize()
+    await finalize('lbauto', runStart, total)
   })
 
 program
@@ -117,9 +146,10 @@ program
   .action(async () => {
     const { scrape } = require('./heycar')
     const total = { count: 0 }
+    const runStart = new Date().toISOString()
     await scrape({ onPage: makeOnPage(total) })
     console.log(`\nDone. Upserted ${total.count} listings.`)
-    await finalize()
+    await finalize('heycar', runStart, total)
   })
 
 program
@@ -128,11 +158,12 @@ program
   .action(async () => {
     const { scrape } = require('./alcopa')
     const total = { count: 0 }
+    const runStart = new Date().toISOString()
     await scrape({ onPage: makeOnPage(total) })
     console.log(`\nDone. Upserted ${total.count} listings.`)
     const removed = await deleteStaleAuctions('alcopa', 2)
     console.log(`Removed ${removed} alcopa auctions older than 2 days.`)
-    await finalize()
+    await finalize('alcopa', runStart, total)
   })
 
 program
@@ -150,9 +181,10 @@ program
       return
     }
     const total = { count: 0 }
+    const runStart = new Date().toISOString()
     await lacentrale.scrape({ pages, headed, debug, onPage: makeOnPage(total) })
     console.log(`\nDone. Upserted ${total.count} listings.`)
-    await finalize()
+    await finalize('lacentrale', runStart, total)
   })
 
 program.parseAsync(process.argv).catch(err => {

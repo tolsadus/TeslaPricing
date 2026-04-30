@@ -95,7 +95,8 @@ async function upsertBatch(client, rows, now) {
        auction_date = EXCLUDED.auction_date,
        lot_number   = EXCLUDED.lot_number,
        vin          = COALESCE(EXCLUDED.vin, listings.vin),
-       ct_url       = COALESCE(EXCLUDED.ct_url, listings.ct_url)
+       ct_url       = COALESCE(EXCLUDED.ct_url, listings.ct_url),
+       removed_at   = NULL
      RETURNING id, source, external_id, price_eur`,
     [
       rows.map(r => r.source),
@@ -197,6 +198,32 @@ async function refreshDelta() {
   await pool.query('SELECT public.refresh_listings_with_delta()')
 }
 
+async function markRemoved(source, runStart) {
+  const res = await pool.query(
+    `UPDATE listings
+        SET removed_at = NOW()
+      WHERE source = $1
+        AND scraped_at < $2
+        AND removed_at IS NULL
+      RETURNING id`,
+    [source, runStart]
+  )
+  return res.rowCount
+}
+
+async function markRemovedByAge(source, days = 7) {
+  const res = await pool.query(
+    `UPDATE listings
+        SET removed_at = NOW()
+      WHERE source = $1
+        AND removed_at IS NULL
+        AND scraped_at < NOW() - ($2 || ' days')::interval
+      RETURNING id`,
+    [source, String(days)]
+  )
+  return res.rowCount
+}
+
 async function deleteStaleAuctions(source, daysOld = 2) {
   const res = await pool.query(
     `DELETE FROM listings
@@ -209,4 +236,4 @@ async function deleteStaleAuctions(source, daysOld = 2) {
   return res.rowCount
 }
 
-module.exports = { pool, upsert, deleteStaleAuctions, refreshDelta }
+module.exports = { pool, upsert, deleteStaleAuctions, refreshDelta, markRemoved, markRemovedByAge }

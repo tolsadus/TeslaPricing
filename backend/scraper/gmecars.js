@@ -146,11 +146,14 @@ async function scrape({ pages = 1, onPage } = {}) {
       const html = await fetchPage(url)
       const results = parsePage(html)
       console.log(`  -> ${results.length} listings`)
+      if (results.length === 0) break
       const pageListings = results.filter(l => !all.has(l.external_id))
+      if (page > 1 && pageListings.length === 0) break
       for (const l of results) all.set(l.external_id, l)
       if (onPage && pageListings.length > 0) await onPage(pageListings)
     } catch (err) {
       console.error(`  ! fetch failed: ${err.message}`)
+      break
     }
     if (page < pages) await new Promise(r => setTimeout(r, 1500))
   }
