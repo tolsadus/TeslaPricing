@@ -341,6 +341,7 @@ html, body {
 }
 .topbar-nav {
   display: flex;
+  align-items: center;
   gap: 0.25rem;
   justify-self: center;
 }
@@ -356,6 +357,70 @@ html, body {
 }
 .nav-link:hover { background: var(--chip-bg); color: var(--text); }
 .nav-link.active { background: var(--chip-bg); color: var(--text); font-weight: 600; }
+
+.nav-search-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  margin-left: 0.5rem;
+  padding: 0;
+  border: 1px solid var(--border);
+  background: var(--bg-elev);
+  color: var(--text);
+  border-radius: 999px;
+  cursor: pointer;
+  line-height: 1;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.nav-search-btn:hover {
+  background: var(--text);
+  color: var(--bg-elev);
+  border-color: var(--text);
+}
+
+.spotlight-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 18vh;
+  background: rgba(20, 22, 28, 0.35);
+  backdrop-filter: blur(8px) saturate(140%);
+  -webkit-backdrop-filter: blur(8px) saturate(140%);
+  animation: spotlight-fade 0.18s ease-out;
+}
+.spotlight-modal {
+  width: min(640px, calc(100% - 2rem));
+  animation: spotlight-pop 0.2s ease-out;
+}
+.spotlight-modal .search-bar {
+  width: 100%;
+  max-width: none;
+}
+.spotlight-modal .search-input-wrap {
+  padding: 0.95rem 1.25rem;
+  border-radius: 16px;
+  background: var(--bg-elev);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.25), 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+.spotlight-modal .search-input { font-size: 1.05rem; }
+.spotlight-modal .search-dropdown {
+  margin-top: 0.6rem;
+  border-radius: 16px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.22), 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+@keyframes spotlight-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes spotlight-pop {
+  from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
 
 .topbar-meta { display: none; }
 
@@ -1671,8 +1736,10 @@ details.auction-group[open] > summary::before { transform: rotate(90deg); }
 /* Search bar */
 .search-bar {
   position: relative;
-  width: 420px;
-  max-width: 100%;
+  width: 100%;
+  max-width: 420px;
+  min-width: 0;
+  flex: 1 1 auto;
 }
 .search-input-wrap {
   display: flex;
@@ -1692,6 +1759,8 @@ details.auction-group[open] > summary::before { transform: rotate(90deg); }
 .search-icon { color: var(--text-mute); flex-shrink: 0; }
 .search-input {
   flex: 1;
+  min-width: 0;
+  width: 100%;
   border: none;
   outline: none;
   background: transparent;
@@ -1804,10 +1873,10 @@ details.auction-group[open] > summary::before { transform: rotate(90deg); }
 }
 
 @media (max-width: 900px) {
-  .search-bar { width: 280px; }
+  .search-bar { max-width: 280px; }
   .search-dropdown { min-width: 320px; }
 }
 @media (max-width: 600px) {
-  .search-bar { width: 180px; }
+  .search-bar { max-width: 180px; }
   .search-dropdown { min-width: 280px; }
 }

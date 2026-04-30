@@ -74,9 +74,11 @@ function TeslaT() {
 
 type Props = {
   onApplyFilters: (patch: Partial<ListingFilters>) => void;
+  autoFocus?: boolean;
+  onClose?: () => void;
 };
 
-export default function SearchBar({ onApplyFilters }: Props) {
+export default function SearchBar({ onApplyFilters, autoFocus, onClose }: Props) {
   const { t, lang } = useTranslation();
   const locale = lang === "fr" ? "fr-FR" : "en-GB";
   const [q, setQ] = useState("");
@@ -85,11 +87,19 @@ export default function SearchBar({ onApplyFilters }: Props) {
   const [loading, setLoading] = useState(false);
   const [modelCounts, setModelCounts] = useState<Record<string, number>>({});
   const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const reqId = useRef(0);
 
   useEffect(() => {
     fetchModelCounts(MODELS).then(setModelCounts).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (autoFocus) {
+      inputRef.current?.focus();
+      setOpen(true);
+    }
+  }, [autoFocus]);
 
   useEffect(() => {
     const text = q.trim();
@@ -123,16 +133,18 @@ export default function SearchBar({ onApplyFilters }: Props) {
     setQ("");
     setOpen(false);
     if (window.location.hash && window.location.hash !== "#") window.location.hash = "";
+    onClose?.();
   }
 
   function gotoListing(id: number) {
     setQ("");
     setOpen(false);
     window.location.hash = `#/listing/${id}`;
+    onClose?.();
   }
 
   function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Escape") { setOpen(false); (e.target as HTMLInputElement).blur(); }
+    if (e.key === "Escape") { setOpen(false); (e.target as HTMLInputElement).blur(); onClose?.(); }
     if (e.key === "Enter") {
       if (results.length > 0) gotoListing(results[0].id);
       else if (matchedModels.length === 1) applyFilters({ model: matchedModels[0] });
@@ -161,6 +173,7 @@ export default function SearchBar({ onApplyFilters }: Props) {
           <path d="m20 20-3.5-3.5" />
         </svg>
         <input
+          ref={inputRef}
           className="search-input"
           type="text"
           placeholder={t("search_placeholder")}

@@ -193,6 +193,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const { user, isAdmin, signOut, signInWithGoogle, signInWithGithub } = useAuth();
   const [showAuthMenu, setShowAuthMenu] = useState(false);
+  const [spotlightOpen, setSpotlightOpen] = useState(false);
   const { toggle, isSaved, saved } = useSaved(user);
   const { toggle: toggleHidden, isHidden, hidden } = useHidden(user);
   const [showHidden, setShowHidden] = useState(false);
@@ -207,6 +208,19 @@ export default function App() {
   useEffect(() => {
     fetchStats().then((s) => setTotalCount(s.total)).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setSpotlightOpen((v) => !v);
+      } else if (e.key === "Escape" && spotlightOpen) {
+        setSpotlightOpen(false);
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [spotlightOpen]);
 
   useEffect(() => {
     setFilteredCount(null);
@@ -250,11 +264,6 @@ export default function App() {
       <div className="topbar">
         <div className="topbar-left">
           <a className="brand" href="#">TeslaPricing</a>
-          <SearchBar
-            onApplyFilters={(patch) => {
-              setFilters((f) => ({ ...f, ...patch }));
-            }}
-          />
         </div>
         <nav className="topbar-nav">
           <a className={`nav-link ${page === "listings" || page === "detail" ? "active" : ""}`} href="#">{t("nav_listings")}</a>
@@ -264,6 +273,12 @@ export default function App() {
           <a className={`nav-link ${page === "watchlist" ? "active" : ""}`} href="#/watchlist">{t("nav_watchlist")} {saved.size > 0 && <span className="nav-count">{saved.size}</span>}</a>
           <a className={`nav-link ${page === "compare" ? "active" : ""}`} href="#/compare">{t("nav_compare")} {compareIds.length > 0 && <span className="nav-count">{compareIds.length}</span>}</a>
           {isAdmin && <a className={`nav-link ${page === "details" ? "active" : ""}`} href="#/details">{t("nav_details")}</a>}
+          <button className="nav-search-btn" onClick={() => setSpotlightOpen(true)} aria-label={t("search_placeholder")} title={t("search_placeholder")}>
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <path d="m20 20-3.5-3.5" />
+            </svg>
+          </button>
         </nav>
         <div className="topbar-meta">
           {page === "detail" ? t("nav_listings") : page === "trends" ? t("nav_trends") : `${totalCount ?? "…"} ${t("nav_inventory")}`}
@@ -556,6 +571,21 @@ export default function App() {
           <span className="compare-bar-label">{t("compare_view_btn", { n: compareIds.length })}</span>
           <a className="btn btn-primary btn-sm" href="#/compare">{t("nav_compare")}</a>
           <button className="btn btn-secondary btn-sm" onClick={clearCompare}>{t("compare_clear")}</button>
+        </div>
+      )}
+
+      {spotlightOpen && (
+        <div className="spotlight-overlay" onClick={() => setSpotlightOpen(false)}>
+          <div className="spotlight-modal" onClick={(e) => e.stopPropagation()}>
+            <SearchBar
+              autoFocus
+              onClose={() => setSpotlightOpen(false)}
+              onApplyFilters={(patch) => {
+                setFilters((f) => ({ ...f, ...patch }));
+                setSpotlightOpen(false);
+              }}
+            />
+          </div>
         </div>
       )}
 
