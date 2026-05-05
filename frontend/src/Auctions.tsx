@@ -3,6 +3,7 @@ import { fetchAuctions } from "./api";
 import { useTranslation } from "./i18n";
 import type { Listing } from "./types";
 import { DRIVETRAIN_LABEL } from "./utils";
+import ImgWithFallback from "./ImgWithFallback";
 
 function formatPrice(v: number | null, fallback: string, locale: string): string {
   if (v === null) return fallback;
@@ -81,11 +82,9 @@ export default function Auctions() {
                 const dt = listing.drivetrain as keyof typeof DRIVETRAIN_LABEL | null;
                 return (
                   <li key={listing.id} className="auction-card">
-                    {listing.image_url && (
-                      <div className="auction-card-img">
-                        <img src={listing.image_url} alt={listing.title} referrerPolicy="no-referrer" />
-                      </div>
-                    )}
+                    <div className="auction-card-img">
+                      <ImgWithFallback src={listing.image_url} alt={listing.title} fallbackText={t("no_image")} />
+                    </div>
                     <div className="auction-card-body">
                       <div className="auction-card-top">
                         <span className="auction-lot">{t("auctions_lot")} n°{listing.lot_number}</span>

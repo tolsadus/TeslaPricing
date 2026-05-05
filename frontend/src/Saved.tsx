@@ -4,6 +4,7 @@ import type { Listing } from "./types";
 import { useAuth } from "./useAuth";
 import { getDrivetrain, DRIVETRAIN_LABEL, formatFuel } from "./utils";
 import { useTranslation } from "./i18n";
+import ImgWithFallback from "./ImgWithFallback";
 
 function formatPrice(v: number | null): string {
   if (v === null) return "—";
@@ -75,7 +76,7 @@ export default function Saved({ saved, toggle, isComparing, toggleCompare, compa
           {listings.map((listing) => (
             <li key={listing.id} className="card">
               <div className="card-img-wrap">
-                {listing.image_url && <img src={listing.image_url} alt={listing.title} referrerPolicy="no-referrer" />}
+                <ImgWithFallback src={listing.image_url} alt={listing.title} fallbackText={t("no_image")} />
                 <button className="bookmark-btn active" onClick={() => toggle(listing.id)} aria-label={t("saved_remove")} title={t("saved_remove")}>✕</button>
                 <button className={`compare-btn${isComparing(listing.id) ? " active" : ""}${compareCount >= 3 && !isComparing(listing.id) ? " disabled" : ""}`} onClick={() => { if (compareCount < 3 || isComparing(listing.id)) toggleCompare(listing.id); }} aria-label={t("compare_add")} title={t("compare_add")}>⊕</button>
                 {listing.price_delta !== null && listing.price_delta > 0 && listing.max_price !== null && (

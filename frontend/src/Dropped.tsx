@@ -4,6 +4,7 @@ import type { DroppedListing } from "./types";
 import { getDrivetrain, DRIVETRAIN_LABEL } from "./utils";
 import { useTranslation } from "./i18n";
 import { useAuth } from "./useAuth";
+import ImgWithFallback from "./ImgWithFallback";
 
 type Props = {
   isSaved: (id: number) => boolean;
@@ -83,10 +84,7 @@ export default function Dropped({ isSaved, toggle, isComparing, toggleCompare, c
           return (
             <li key={`${d.id}-${d.dropped_at}`} className={`dropped-card${rank === 0 ? " dropped-card--gold" : ""}`}>
               <div className="dropped-img-wrap">
-                {d.image_url
-                  ? <img src={d.image_url} alt={d.title} referrerPolicy="no-referrer" />
-                  : <div className="dropped-img-placeholder" />
-                }
+                <ImgWithFallback src={d.image_url} alt={d.title} fallbackText={t("no_image")} />
                 <button className={`bookmark-btn${isSaved(d.id) ? " active" : ""}`} onClick={() => toggle(d.id)} aria-label="Save">🔖</button>
                 <button className={`compare-btn${isComparing(d.id) ? " active" : ""}${compareCount >= 3 && !isComparing(d.id) ? " disabled" : ""}`} onClick={() => { if (compareCount < 3 || isComparing(d.id)) toggleCompare(d.id); }} aria-label="Compare">⊕</button>
                 <div className="dropped-drop-badge">

@@ -86,6 +86,7 @@ const en = {
   price_history_empty: "No price history yet.",
   price_highest: "highest ever crawl",
   photo_alt: "Photo",
+  no_image: "No image available yet",
   // Auctions
   auctions_title: "Auctions",
   auctions_subtitle: "Upcoming Tesla auctions at Alcopa",
@@ -265,6 +266,7 @@ const fr: Record<TKey, string> = {
   price_history_empty: "Pas encore d'historique de prix.",
   price_highest: "prix maximum crawlé",
   photo_alt: "Photo",
+  no_image: "Aucune image disponible pour le moment",
   // Auctions
   auctions_title: "Enchères",
   auctions_subtitle: "Prochaines ventes Tesla chez Alcopa",

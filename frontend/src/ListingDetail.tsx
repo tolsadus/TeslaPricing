@@ -129,14 +129,19 @@ function PriceChart({ points, emptyMessage }: { points: PricePoint[]; emptyMessa
   );
 }
 
-function Carousel({ photos, fallback, photoAlt }: { photos: string[]; fallback: string | null; photoAlt: string }) {
+function Carousel({ photos, fallback, photoAlt, noImageText }: { photos: string[]; fallback: string | null; photoAlt: string; noImageText: string }) {
   const [index, setIndex] = useState(0);
+  const [failed, setFailed] = useState<Record<number, boolean>>({});
   const images = photos.length > 0 ? photos : fallback ? [fallback] : [];
-  if (images.length === 0) return null;
+  if (images.length === 0) {
+    return <div className="carousel"><div className="no-image-placeholder">{noImageText}</div></div>;
+  }
 
   return (
     <div className="carousel">
-      <img src={images[index]} alt={`${photoAlt} ${index + 1}`} referrerPolicy="no-referrer" />
+      {failed[index]
+        ? <div className="no-image-placeholder">{noImageText}</div>
+        : <img src={images[index]} alt={`${photoAlt} ${index + 1}`} referrerPolicy="no-referrer" onError={() => setFailed(f => ({ ...f, [index]: true }))} />}
       {images.length > 1 && (
         <>
           <button className="carousel-btn prev" onClick={() => setIndex((i) => (i - 1 + images.length) % images.length)}>‹</button>
@@ -222,7 +227,7 @@ export default function ListingDetail({ id, isSaved, onToggle }: { id: number; i
       <button className="back-btn" onClick={() => { window.location.hash = ""; }}>{t("detail_back")}</button>
 
       <div className="detail-grid">
-        <Carousel photos={photos} fallback={listing.image_url} photoAlt={t("photo_alt")} />
+        <Carousel photos={photos} fallback={listing.image_url} photoAlt={t("photo_alt")} noImageText={t("no_image")} />
         <div className="detail-info">
           <div>
             <h2>{listing.title}</h2>

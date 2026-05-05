@@ -11,6 +11,7 @@ import Details from "./Details";
 import Saved from "./Saved";
 import Compare from "./Compare";
 import SearchBar from "./SearchBar";
+import ImgWithFallback from "./ImgWithFallback";
 import { useSaved } from "./useSaved";
 import { useHidden } from "./useHidden";
 import { useCompare } from "./useCompare";
@@ -562,7 +563,7 @@ export default function App() {
                 {listings.filter((l) => showHidden || !isHidden(l.id)).map((listing) => (
                   <li key={listing.id} className={`card${isHidden(listing.id) ? " card-hidden" : ""}${listing.removed_at ? " card-removed" : ""}`}>
                     <div className="card-img-wrap">
-                      {listing.image_url && <img src={listing.image_url} alt={listing.title} referrerPolicy="no-referrer" />}
+                      <ImgWithFallback src={listing.image_url} alt={listing.title} fallbackText={t("no_image")} />
                       <button className={`bookmark-btn${isSaved(listing.id) ? " active" : ""}`} onClick={() => toggle(listing.id)} aria-label={t("save_listing")}>🔖</button>
                       <button className={`hide-btn${isHidden(listing.id) ? " active" : ""}`} onClick={() => toggleHidden(listing.id)} aria-label={isHidden(listing.id) ? t("unhide_listing") : t("hide_listing")} title={isHidden(listing.id) ? t("unhide_listing") : t("hide_listing")}>{isHidden(listing.id) ? "🙈" : "👁"}</button>
                       <button className={`compare-btn${isComparing(listing.id) ? " active" : ""}${compareIds.length >= 3 && !isComparing(listing.id) ? " disabled" : ""}`} onClick={() => { if (compareIds.length < 3 || isComparing(listing.id)) toggleCompare(listing.id); }} aria-label={t("compare_add")} title={t("compare_add")}>⊕</button>
