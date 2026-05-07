@@ -124,6 +124,19 @@ export async function fetchTrends(): Promise<TrendPoint[]> {
   return (data ?? []) as TrendPoint[];
 }
 
+export async function fetchListingsForMap(filters: ListingFilters = {}): Promise<Listing[]> {
+  let query = supabase
+    .from("listings_with_delta")
+    .select("id, source, title, model, price_eur, year, mileage_km, image_url, latitude, longitude, drivetrain, autopilot, location, url")
+    .not("latitude", "is", null)
+    .not("longitude", "is", null)
+    .limit(5000);
+  query = applyFilters(query, filters);
+  const { data, error } = await query;
+  if (error) throw new Error(error.message);
+  return (data ?? []) as Listing[];
+}
+
 export async function fetchAuctions(): Promise<Listing[]> {
   const { data, error } = await supabase
     .from("listings_with_delta")

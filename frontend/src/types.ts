@@ -33,6 +33,9 @@ export type Listing = {
   lot_number: string | null;
   vin: string | null;
   ct_url: string | null;
+  is_sold: boolean;
+  latitude: number | null;
+  longitude: number | null;
 };
 
 export type DroppedListing = {

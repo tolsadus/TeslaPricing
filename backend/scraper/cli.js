@@ -2,7 +2,8 @@
 'use strict'
 
 const { Command } = require('commander')
-const { upsert, pool, refreshDelta, markRemovedByAge } = require('./db')
+const { upsert, pool, refreshDelta, markRemovedByAge, getPastUnsoldAlcopa, markSold } = require('./db')
+const { geocode } = require('./geocode')
 
 const PAGINATED_SOURCES = new Set(['leboncoin', 'lacentrale'])
 const STALE_DAYS_DEFAULT = 3
@@ -153,11 +154,40 @@ program
   .command('alcopa')
   .description('Scrape Alcopa Auction Tesla listings')
   .action(async () => {
-    const { scrape } = require('./alcopa')
+    const { scrape, checkSold } = require('./alcopa')
     const total = { count: 0 }
     const runStart = new Date().toISOString()
     await scrape({ onPage: makeOnPage(total) })
     console.log(`\nDone. Upserted ${total.count} listings.`)
+
+    // Backfill: re-check past auction listings that are no longer in the
+    // search results to detect ADJUGÉ on their detail pages.
+    try {
+      const pending = await getPastUnsoldAlcopa({ days: 7 })
+      if (pending.length > 0) {
+        console.log(`[alcopa] backfilling sold status for ${pending.length} past listings...`)
+        const soldIds = []
+        for (const row of pending) {
+          try {
+            const sold = await checkSold(row.url)
+            if (sold) {
+              soldIds.push(row.id)
+              console.log(`  [${row.external_id}] ADJUGÉ`)
+            }
+          } catch (err) {
+            console.error(`  ! backfill failed for ${row.external_id}: ${err.message}`)
+          }
+          await new Promise(r => setTimeout(r, 500))
+        }
+        if (soldIds.length > 0) {
+          const n = await markSold(soldIds)
+          console.log(`[alcopa] marked ${n} listings as sold.`)
+        }
+      }
+    } catch (err) {
+      console.error('Failed alcopa sold backfill:', err.message)
+    }
+
     await finalize('alcopa', runStart, total)
   })
 
@@ -180,6 +210,52 @@ program
     await lacentrale.scrape({ pages, headed, debug, onPage: makeOnPage(total) })
     console.log(`\nDone. Upserted ${total.count} listings.`)
     await finalize('lacentrale', runStart, total)
+  })
+
+program
+  .command('backfill-geo')
+  .description('Geocode all listings without lat/lng (batched by distinct location)')
+  .action(async () => {
+    const client = await pool.connect()
+    try {
+      const { rows: locations } = await client.query(
+        `SELECT location, COUNT(*) AS n
+           FROM listings
+          WHERE location IS NOT NULL
+            AND (latitude IS NULL OR longitude IS NULL)
+            AND removed_at IS NULL
+          GROUP BY location
+          ORDER BY n DESC`
+      )
+      console.log(`[geo] ${locations.length} distinct locations to geocode`)
+      let hit = 0, miss = 0
+      for (let i = 0; i < locations.length; i++) {
+        const { location, n } = locations[i]
+        try {
+          const coords = await geocode(client, location)
+          if (coords) {
+            await client.query(
+              `UPDATE listings SET latitude = $1, longitude = $2
+                WHERE location = $3 AND latitude IS NULL`,
+              [coords.lat, coords.lng, location]
+            )
+            hit++
+            console.log(`  [${i + 1}/${locations.length}] ${location} → ${coords.lat.toFixed(3)},${coords.lng.toFixed(3)} (${n} listings)`)
+          } else {
+            miss++
+            console.log(`  [${i + 1}/${locations.length}] ${location} → no result (${n} listings)`)
+          }
+        } catch (err) {
+          miss++
+          console.error(`  [${i + 1}/${locations.length}] ${location} → ERROR ${err.message}`)
+        }
+      }
+      console.log(`\n[geo] done. hits=${hit} misses=${miss}`)
+    } finally {
+      client.release()
+    }
+    await refreshDelta()
+    await pool.end()
   })
 
 program.parseAsync(process.argv).catch(err => {

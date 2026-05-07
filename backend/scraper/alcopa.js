@@ -100,6 +100,7 @@ function parseListings(html) {
         _photos:     [],
         auction_date,
         lot_number,
+        is_sold:     false, // filled in by fetchDetail
       })
     } catch (err) {
       console.error(`  ! alcopa parse error: ${err.message}`)
@@ -130,7 +131,10 @@ function parseDetail(html) {
   const color = tableRow('Couleur')
   const ctMatch = html.match(/href="(\/getDocument\/ct\/[^"]+)"/i)
   const ct_url = ctMatch ? `${BASE_URL}${ctMatch[1]}` : null
-  return { vin, color, ct_url }
+  // Sold detail pages render an "ADJUGÉ" badge (uppercase). The lowercase
+  // "adjugé" appearing in JS i18n strings on every page is filtered out.
+  const is_sold = /ADJUGÉ/.test(html)
+  return { vin, color, ct_url, is_sold }
 }
 
 async function scrape({ onPage } = {}) {
@@ -143,11 +147,12 @@ async function scrape({ onPage } = {}) {
     for (const listing of listings) {
       try {
         const detailHtml = await fetchHtml(listing.url)
-        const { vin, color, ct_url } = parseDetail(detailHtml)
+        const { vin, color, ct_url, is_sold } = parseDetail(detailHtml)
         listing.vin = vin
         listing.color = color
         listing.ct_url = ct_url
-        if (vin) console.log(`  [${listing.external_id}] VIN: ${vin}`)
+        listing.is_sold = is_sold
+        if (vin) console.log(`  [${listing.external_id}] VIN: ${vin}${is_sold ? ' ADJUGÉ' : ''}`)
       } catch (err) {
         console.error(`  ! detail fetch failed for ${listing.external_id}: ${err.message}`)
       }
@@ -162,4 +167,9 @@ async function scrape({ onPage } = {}) {
   }
 }
 
-module.exports = { scrape, parseListings }
+async function checkSold(url) {
+  const html = await fetchHtml(url)
+  return /ADJUGÉ/.test(html)
+}
+
+module.exports = { scrape, parseListings, checkSold }

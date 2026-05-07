@@ -90,6 +90,7 @@ export default function Auctions() {
                         <span className="auction-lot">{t("auctions_lot")} n°{listing.lot_number}</span>
                         {dt && <span className={`drivetrain-badge dt-${dt.toLowerCase()}`}>{DRIVETRAIN_LABEL[dt] ?? dt}</span>}
                         {listing.soh != null && <span className="auction-soh">{t("auctions_soh")} {listing.soh}%</span>}
+                        {listing.is_sold && <span className="auction-sold-badge">{t("auctions_sold")}</span>}
                       </div>
                       <h4 className="auction-card-title">{listing.title}</h4>
                       <p className="auction-card-meta">

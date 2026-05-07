@@ -9,6 +9,7 @@ const en = {
   nav_deals: "Deals",
   nav_trends: "Trends",
   nav_auctions: "Auctions",
+  nav_map: "Map",
   nav_watchlist: "Watchlist",
   nav_details: "Details",
   nav_inventory: "inventory",
@@ -87,6 +88,9 @@ const en = {
   price_highest: "highest ever crawl",
   photo_alt: "Photo",
   no_image: "No image available yet",
+  // Map
+  map_title: "Map",
+  map_count: "{n} listings on the map",
   // Auctions
   auctions_title: "Auctions",
   auctions_subtitle: "Upcoming Tesla auctions at Alcopa",
@@ -98,6 +102,7 @@ const en = {
   auctions_soh: "SoH",
   auctions_view: "View auction",
   auctions_finished: "Finished",
+  auctions_sold: "SOLD",
   auctions_ct: "Inspection report",
   auctions_show_past: "Show past auctions ({n})",
   auctions_hide_past: "Hide past auctions",
@@ -189,6 +194,7 @@ const fr: Record<TKey, string> = {
   nav_deals: "Bonnes affaires",
   nav_trends: "Tendances",
   nav_auctions: "Enchères",
+  nav_map: "Carte",
   nav_watchlist: "Favoris",
   nav_details: "Détails",
   nav_inventory: "inventaire",
@@ -267,6 +273,9 @@ const fr: Record<TKey, string> = {
   price_highest: "prix maximum crawlé",
   photo_alt: "Photo",
   no_image: "Aucune image disponible pour le moment",
+  // Map
+  map_title: "Carte",
+  map_count: "{n} annonces sur la carte",
   // Auctions
   auctions_title: "Enchères",
   auctions_subtitle: "Prochaines ventes Tesla chez Alcopa",
@@ -278,6 +287,7 @@ const fr: Record<TKey, string> = {
   auctions_soh: "SoH",
   auctions_view: "Voir l'enchère",
   auctions_finished: "Terminée",
+  auctions_sold: "ADJUGÉ",
   auctions_ct: "Contrôle technique",
   auctions_show_past: "Voir les enchères passées ({n})",
   auctions_hide_past: "Masquer les enchères passées",

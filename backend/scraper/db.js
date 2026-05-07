@@ -5,6 +5,7 @@ require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') }
 const fs = require('fs')
 const path = require('path')
 const { Pool } = require('pg')
+const { geocode } = require('./geocode')
 
 const BATCH_SIZE = 500
 
@@ -57,7 +58,7 @@ async function upsertBatch(client, rows, now) {
       (source, external_id, title, make, model, version, price_eur, year,
        mileage_km, fuel, gearbox, location, url, image_url, scraped_at,
        drivetrain, soh, color, horse_power, doors, seats, autopilot, tow_hitch,
-       auction_date, lot_number, vin, ct_url)
+       auction_date, lot_number, vin, ct_url, is_sold, latitude, longitude)
      SELECT
        unnest($1::text[]),  unnest($2::text[]),  unnest($3::text[]),
        unnest($4::text[]),  unnest($5::text[]),  unnest($6::text[]),
@@ -69,7 +70,8 @@ async function upsertBatch(client, rows, now) {
        unnest($18::text[]), unnest($19::int[]),  unnest($20::int[]),
        unnest($21::int[]),  unnest($22::text[]), unnest($23::bool[]),
        unnest($24::date[]), unnest($25::text[]), unnest($26::text[]),
-       unnest($27::text[])
+       unnest($27::text[]), unnest($28::bool[]),
+       unnest($29::numeric[]), unnest($30::numeric[])
      ON CONFLICT (source, external_id) DO UPDATE SET
        title        = EXCLUDED.title,
        make         = EXCLUDED.make,
@@ -96,6 +98,9 @@ async function upsertBatch(client, rows, now) {
        lot_number   = EXCLUDED.lot_number,
        vin          = COALESCE(EXCLUDED.vin, listings.vin),
        ct_url       = COALESCE(EXCLUDED.ct_url, listings.ct_url),
+       is_sold      = EXCLUDED.is_sold,
+       latitude     = COALESCE(EXCLUDED.latitude,  listings.latitude),
+       longitude    = COALESCE(EXCLUDED.longitude, listings.longitude),
        removed_at   = NULL
      RETURNING id, source, external_id, price_eur`,
     [
@@ -126,6 +131,9 @@ async function upsertBatch(client, rows, now) {
       rows.map(r => r.lot_number ?? null),
       rows.map(r => r.vin ?? null),
       rows.map(r => r.ct_url ?? null),
+      rows.map(r => r.is_sold ?? false),
+      rows.map(r => r.latitude  ?? null),
+      rows.map(r => r.longitude ?? null),
     ]
   )
 
@@ -165,8 +173,35 @@ async function upsertBatch(client, rows, now) {
   return upsertRes.rows.length
 }
 
+async function fillGeo(rows) {
+  // Geocode listings before upserting so the inserts/updates carry lat/lng.
+  // Cached lookups are cheap (DB read); only Nominatim misses are slow.
+  const todo = rows.filter(r => r.location && (r.latitude == null || r.longitude == null))
+  if (todo.length === 0) return
+  const client = await pool.connect()
+  let hits = 0
+  try {
+    for (const row of todo) {
+      try {
+        const coords = await geocode(client, row.location)
+        if (coords) {
+          row.latitude = coords.lat
+          row.longitude = coords.lng
+          hits++
+        }
+      } catch (err) {
+        console.error(`  ! geocode failed for "${row.location}": ${err.message}`)
+      }
+    }
+  } finally {
+    client.release()
+  }
+  if (hits > 0) console.log(`  [geo] geocoded ${hits}/${todo.length} new locations`)
+}
+
 async function upsert(rows) {
   if (!rows.length) return 0
+  await fillGeo(rows)
   const now = new Date().toISOString()
   let count = 0
   const total = rows.length
@@ -211,4 +246,27 @@ async function markRemovedByAge(source, days = 7) {
   return res.rowCount
 }
 
-module.exports = { pool, upsert, refreshDelta, markRemovedByAge }
+async function getPastUnsoldAlcopa({ days = 90 } = {}) {
+  const res = await pool.query(
+    `SELECT id, url, external_id
+       FROM listings
+      WHERE source = 'alcopa'
+        AND is_sold = false
+        AND auction_date IS NOT NULL
+        AND auction_date < CURRENT_DATE
+        AND auction_date >= CURRENT_DATE - ($1 || ' days')::interval`,
+    [String(days)]
+  )
+  return res.rows
+}
+
+async function markSold(ids) {
+  if (!ids.length) return 0
+  const res = await pool.query(
+    `UPDATE listings SET is_sold = true WHERE id = ANY($1::int[])`,
+    [ids]
+  )
+  return res.rowCount
+}
+
+module.exports = { pool, upsert, refreshDelta, markRemovedByAge, getPastUnsoldAlcopa, markSold }
