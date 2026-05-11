@@ -13,6 +13,7 @@
 #   ./scrape.sh lacentrale --headed
 #   ./scrape.sh mmxbv
 #   ./scrape.sh nikola
+#   ./scrape.sh ewigo
 #   ./scrape.sh all
 
 set -e
@@ -22,7 +23,7 @@ BACKEND_DIR="$ROOT_DIR/backend"
 
 if [ $# -eq 0 ]; then
   echo "Usage: $0 <source> [options]"
-  echo "Sources: tesla, capcar, gmecars, leboncoin, aramisauto, renew, lbauto, lacentrale, mmxbv, nikola, all"
+  echo "Sources: tesla, capcar, gmecars, leboncoin, aramisauto, renew, lbauto, lacentrale, mmxbv, nikola, ewigo, all"
   exit 1
 fi
 
@@ -60,6 +61,9 @@ if [ "$1" = "all" ]; then
   echo ""
   echo "--- nikola ---"
   node scraper/cli.js nikola
+  echo ""
+  echo "--- ewigo ---"
+  node scraper/cli.js ewigo
   echo ""
   echo "==> All scrapers done."
 else

@@ -218,6 +218,19 @@ program
   })
 
 program
+  .command('ewigo')
+  .description('Scrape Ewigo Tesla listings via Inertia data-page JSON')
+  .action(async () => {
+    const { scrape } = require('./ewigo')
+    const total = { count: 0 }
+    const runStart = new Date().toISOString()
+    const knownSoldIds = await getKnownSoldIds('ewigo')
+    await scrape({ onPage: makeOnPage(total), knownSoldIds })
+    console.log(`\nDone. Upserted ${total.count} listings.`)
+    await finalize('ewigo', runStart, total)
+  })
+
+program
   .command('lacentrale')
   .description('Scrape La Centrale Tesla listings via Playwright')
   .option('--pages <n>', 'number of pages', v => parseInt(v, 10), 1)

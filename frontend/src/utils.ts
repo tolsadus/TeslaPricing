@@ -75,6 +75,7 @@ const SOURCE_COUNTRY: Record<string, { code: string; flag: string; name: string 
   renew:      { code: "FR", flag: "🇫🇷", name: "France" },
   heycar:     { code: "FR", flag: "🇫🇷", name: "France" },
   alcopa:     { code: "FR", flag: "🇫🇷", name: "France" },
+  ewigo:      { code: "FR", flag: "🇫🇷", name: "France" },
   nikola:     { code: "BE", flag: "🇧🇪", name: "Belgium" },
   mmxbv:      { code: "NL", flag: "🇳🇱", name: "Netherlands" },
 };

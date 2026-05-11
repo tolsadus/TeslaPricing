@@ -9,7 +9,7 @@ const COUNTRY_NAMES = { FR: 'France', BE: 'Belgium', NL: 'Netherlands' }
 const SOURCE_COUNTRY = {
   tesla: 'FR', leboncoin: 'FR', lacentrale: 'FR', capcar: 'FR',
   lbauto: 'FR', aramisauto: 'FR', gmecars: 'FR', renew: 'FR',
-  heycar: 'FR', alcopa: 'FR',
+  heycar: 'FR', alcopa: 'FR', ewigo: 'FR',
   nikola: 'BE',
   mmxbv: 'NL',
 }

@@ -19,6 +19,7 @@ on:
           - renew
           - mmxbv
           - nikola
+          - ewigo
 
 jobs:
   scrape:
@@ -78,5 +79,11 @@ jobs:
       - name: Run nikola
         if: inputs.scraper == '' || inputs.scraper == 'nikola'
         run: node scraper/cli.js nikola
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Run ewigo
+        if: inputs.scraper == '' || inputs.scraper == 'ewigo'
+        run: node scraper/cli.js ewigo
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}

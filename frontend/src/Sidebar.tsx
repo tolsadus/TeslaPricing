@@ -3,7 +3,7 @@ import { useTranslation } from "./i18n";
 import type { ListingFilters } from "./types";
 
 const MODELS = ["Model S", "Model 3", "Model X", "Model Y", "Cybertruck", "Roadster"] as const;
-const SOURCES = ["tesla", "leboncoin", "lacentrale", "capcar", "lbauto", "aramisauto", "gmecars", "renew", "heycar", "alcopa", "mmxbv", "nikola"] as const;
+const SOURCES = ["tesla", "leboncoin", "lacentrale", "capcar", "lbauto", "aramisauto", "gmecars", "renew", "heycar", "alcopa", "mmxbv", "nikola", "ewigo"] as const;
 const DRIVETRAINS = ["RWD", "AWD", "Performance", "Plaid"] as const;
 const AUTOPILOTS = ["EAP", "FSD"] as const;
 const SEATS_OPTIONS = [5, 6, 7] as const;
