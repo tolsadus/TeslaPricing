@@ -17,6 +17,8 @@ on:
           - heycar
           - lbauto
           - renew
+          - mmxbv
+          - nikola
 
 jobs:
   scrape:
@@ -64,5 +66,17 @@ jobs:
       - name: Run renew
         if: inputs.scraper == '' || inputs.scraper == 'renew'
         run: node scraper/cli.js renew --pages 5
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Run mmxbv
+        if: inputs.scraper == '' || inputs.scraper == 'mmxbv'
+        run: node scraper/cli.js mmxbv
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Run nikola
+        if: inputs.scraper == '' || inputs.scraper == 'nikola'
+        run: node scraper/cli.js nikola
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
