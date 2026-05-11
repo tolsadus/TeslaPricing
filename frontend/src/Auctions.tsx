@@ -49,15 +49,6 @@ export default function Auctions() {
 
   return (
     <div className="auctions-page">
-      <div className="page-hero">
-        <div className="page-header">
-          <div>
-            <h2 className="dropped-title">{t("auctions_title")}</h2>
-            <p className="dropped-subtitle">{t("auctions_subtitle")}</p>
-          </div>
-        </div>
-      </div>
-
       <div className="auctions-content">
         {loading && <span className="spinner" />}
         {error && <p className="state error">Error: {error}</p>}

@@ -2,7 +2,7 @@ declare const __GIT_BRANCH__: string;
 declare const __GIT_COMMIT__: string;
 
 import { useEffect, useRef, useState } from "react";
-import { fetchListings, fetchStats, fetchCount } from "./api";
+import { fetchListings, fetchStats } from "./api";
 import ListingDetail from "./ListingDetail";
 import Trends from "./Trends";
 import Dropped from "./Dropped";
@@ -135,7 +135,6 @@ export default function App() {
 
   const LIMIT = 50;
   const [totalCount, setTotalCount] = useState<number | null>(null);
-  const [filteredCount, setFilteredCount] = useState<number | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
   const [sectionResetKey, setSectionResetKey] = useState(0);
   const [filters, setFilters] = useState<ListingFilters>(() => {
@@ -184,11 +183,6 @@ export default function App() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [spotlightOpen]);
-
-  useEffect(() => {
-    setFilteredCount(null);
-    fetchCount(filters).then(setFilteredCount).catch(() => {});
-  }, [filters]);
 
   useEffect(() => {
     if (page !== "listings") return;
@@ -295,27 +289,16 @@ export default function App() {
         </div>
       ) : (
         <>
-          <div className="page-hero">
-            <div className="page-header">
-              <div>
-                <h2 className="dropped-title">{t("nav_listings")}</h2>
-                <p className="dropped-subtitle">
-                  {filters.model
-                    ? <>{filteredCount ?? "…"} {filters.model} {t("listings_in_stock")}</>
-                    : <>{t("listings_subtitle")}</>
-                  }
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="content-area">
+          <div className="content-area listings-content">
             <Sidebar
               filters={filters}
               setFilters={setFilters}
               defaultLimit={LIMIT}
               resetKey={sectionResetKey}
               bumpResetKey={() => setSectionResetKey(k => k + 1)}
+              hiddenCount={hidden.size}
+              showHidden={showHidden}
+              onToggleHidden={() => setShowHidden((v) => !v)}
             />
 
             {/* ── Main grid ── */}
@@ -340,14 +323,6 @@ export default function App() {
               {error && <p className="state error">Error: {error}</p>}
               {!loading && !error && listings.length === 0 && (
                 <p className="state">{t("no_listings")}</p>
-              )}
-
-              {hidden.size > 0 && (
-                <div className="hidden-toggle-row">
-                  <button className="hidden-toggle-btn" onClick={() => setShowHidden((v) => !v)}>
-                    {showHidden ? t("hidden_hide_count", { n: hidden.size }) : t("hidden_show_count", { n: hidden.size })}
-                  </button>
-                </div>
               )}
 
               <ul className="grid">

@@ -17,7 +17,7 @@ const sidebarSectionPrefs: Record<string, boolean> = (() => {
   try { return JSON.parse(localStorage.getItem("sidebarSections") ?? "{}"); } catch { return {}; }
 })();
 
-function SidebarSection({ label, title, children, defaultOpen = false }: { label: string; title?: string; children: React.ReactNode; defaultOpen?: boolean }) {
+function SidebarSection({ label, title, children, defaultOpen = false, className }: { label: string; title?: string; children: React.ReactNode; defaultOpen?: boolean; className?: string }) {
   const [open, setOpen] = useState(() => sidebarSectionPrefs[label] ?? defaultOpen);
 
   function toggle() {
@@ -30,7 +30,7 @@ function SidebarSection({ label, title, children, defaultOpen = false }: { label
   }
 
   return (
-    <div className="sidebar-section">
+    <div className={`sidebar-section${className ? ` ${className}` : ""}`}>
       <button type="button" className="sidebar-heading-btn" onClick={toggle}>
         <span>{title ?? label}</span>
         <span className={`sidebar-arrow ${open ? "open" : ""}`}>▾</span>
@@ -79,9 +79,12 @@ type SidebarProps = {
   defaultLimit: number;
   resetKey: number;
   bumpResetKey: () => void;
+  hiddenCount?: number;
+  showHidden?: boolean;
+  onToggleHidden?: () => void;
 };
 
-export default function Sidebar({ filters, setFilters, defaultLimit, resetKey, bumpResetKey }: SidebarProps) {
+export default function Sidebar({ filters, setFilters, defaultLimit, resetKey, bumpResetKey, hiddenCount = 0, showHidden = false, onToggleHidden }: SidebarProps) {
   const { t } = useTranslation();
 
   const SORT_OPTIONS = [
@@ -98,34 +101,52 @@ export default function Sidebar({ filters, setFilters, defaultLimit, resetKey, b
 
   return (
     <aside className="sidebar">
-      <div className="sidebar-section">
+      <div className="sidebar-section sidebar-actions">
         <button
           type="button"
           className="reset-filters-btn"
           onClick={() => {
             setFilters({ sort_by: "scraped_at", sort_dir: "desc", limit: defaultLimit });
             Object.keys(sidebarSectionPrefs).forEach(k => { sidebarSectionPrefs[k] = false; });
-            sidebarSectionPrefs["Model"] = true;
             localStorage.setItem("sidebarSections", JSON.stringify(sidebarSectionPrefs));
             bumpResetKey();
           }}
         >
           {t("reset_filters")}
         </button>
+        {hiddenCount > 0 && onToggleHidden && (
+          <button type="button" className="reset-filters-btn" onClick={onToggleHidden}>
+            {showHidden ? t("hidden_hide_count", { n: hiddenCount }) : t("hidden_show_count", { n: hiddenCount })}
+          </button>
+        )}
       </div>
 
-      <SidebarSection key={`Model-${resetKey}`} label="Model" title={t("filter_model")} defaultOpen>
-        <div className="model-options">
-          <button type="button" className={`model-btn ${!filters.model ? "active" : ""}`}
-            onClick={() => setFilters({ ...filters, model: undefined })}>{t("filter_all")}</button>
+      <div className="sidebar-section model-block">
+        <div className="model-block-header">
+          <span className="sidebar-heading-label">{t("filter_model")}</span>
+          <button
+            type="button"
+            className={`model-all-btn ${!filters.model ? "active" : ""}`}
+            onClick={() => setFilters({ ...filters, model: undefined })}
+          >
+            {t("filter_all")}
+          </button>
+        </div>
+        <div className="model-grid">
           {MODELS.map((m) => (
-            <button key={m} type="button"
-              className={`model-btn ${filters.model === m ? "active" : ""}`}
-              onClick={() => setFilters({ ...filters, model: m })}>{m}</button>
+            <button
+              key={m}
+              type="button"
+              className={`model-tile ${filters.model === m ? "active" : ""}`}
+              onClick={() => setFilters({ ...filters, model: m })}
+            >
+              {m}
+            </button>
           ))}
         </div>
-      </SidebarSection>
+      </div>
 
+      <div className="sidebar-grid">
       <SidebarSection key={`Source-${resetKey}`} label="Source" title={t("filter_source")}>
         <div className="model-options">
           <button type="button" className={`model-btn ${!filters.source ? "active" : ""}`}
@@ -191,7 +212,7 @@ export default function Sidebar({ filters, setFilters, defaultLimit, resetKey, b
         </div>
       </SidebarSection>
 
-      <SidebarSection key={`Filters-${resetKey}`} label="Filters" title={t("filter_filters")}>
+      <SidebarSection key={`Filters-${resetKey}`} label="Filters" title={t("filter_filters")} className="sidebar-section-span">
         <RangeInputs label={t("filter_price")} unit="€"
           minVal={filters.min_price} maxVal={filters.max_price}
           onChangeMin={v => setFilters(f => ({ ...f, min_price: v }))}
@@ -225,6 +246,7 @@ export default function Sidebar({ filters, setFilters, defaultLimit, resetKey, b
           {t("filter_hide_sold")}
         </button>
       </SidebarSection>
+      </div>
     </aside>
   );
 }

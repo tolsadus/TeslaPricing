@@ -42,9 +42,6 @@ const en = {
   sort_year_oldest: "Year (oldest)",
   sort_biggest_drop_eur: "Biggest drop (€)",
   sort_biggest_drop_pct: "Biggest drop (%)",
-  // Listings page
-  listings_subtitle: "Crawled once a day from all sources",
-  listings_in_stock: "in stock",
   // Cards
   card_view: "View",
   card_crawled: "Crawled",
@@ -94,8 +91,6 @@ const en = {
   map_title: "Map",
   map_count: "{n} listings on the map",
   // Auctions
-  auctions_title: "Auctions",
-  auctions_subtitle: "Upcoming Tesla auctions at Alcopa",
   auctions_empty: "No upcoming auctions found.",
   auctions_lot: "Lot",
   auctions_date: "Sale date",
@@ -229,9 +224,6 @@ const fr: Record<TKey, string> = {
   sort_year_oldest: "Année (ancienne)",
   sort_biggest_drop_eur: "Meilleure baisse (€)",
   sort_biggest_drop_pct: "Meilleure baisse (%)",
-  // Listings page
-  listings_subtitle: "Mis à jour quotidiennement depuis toutes les sources",
-  listings_in_stock: "en stock",
   // Cards
   card_view: "Voir",
   card_crawled: "Crawlé le",
@@ -281,8 +273,6 @@ const fr: Record<TKey, string> = {
   map_title: "Carte",
   map_count: "{n} annonces sur la carte",
   // Auctions
-  auctions_title: "Enchères",
-  auctions_subtitle: "Prochaines ventes Tesla chez Alcopa",
   auctions_empty: "Aucune enchère à venir.",
   auctions_lot: "Lot",
   auctions_date: "Date de vente",
