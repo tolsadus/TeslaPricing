@@ -20,7 +20,7 @@ import { useCompare } from "./useCompare";
 import { useAuth } from "./useAuth";
 import { useTranslation } from "./i18n";
 import type { Listing, ListingFilters } from "./types";
-import { getDrivetrain, DRIVETRAIN_LABEL, formatFuel } from "./utils";
+import { getDrivetrain, DRIVETRAIN_LABEL, formatFuel, getCountry } from "./utils";
 
 function formatPrice(v: number | null, locale: string): string {
   if (v === null) return "—";
@@ -29,7 +29,7 @@ function formatPrice(v: number | null, locale: string): string {
 
 function formatKm(v: number | null, newLabel = "New", locale = "fr-FR"): string {
   if (v === null) return "—";
-  if (v <= 100) return newLabel;
+  if (v <= 1000) return newLabel;
   return `${new Intl.NumberFormat(locale).format(v)} km`;
 }
 
@@ -141,9 +141,13 @@ export default function App() {
   const [filters, setFilters] = useState<ListingFilters>(() => {
     try {
       const saved = localStorage.getItem("filters");
-      if (saved) return { ...JSON.parse(saved), limit: LIMIT };
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.hide_sold === undefined) parsed.hide_sold = true;
+        return { ...parsed, limit: LIMIT };
+      }
     } catch {}
-    return { sort_by: "scraped_at", sort_dir: "desc", limit: LIMIT };
+    return { sort_by: "scraped_at", sort_dir: "desc", hide_sold: true, limit: LIMIT };
   });
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
@@ -348,7 +352,7 @@ export default function App() {
 
               <ul className="grid">
                 {listings.filter((l) => showHidden || !isHidden(l.id)).map((listing) => (
-                  <li key={listing.id} className={`card${isHidden(listing.id) ? " card-hidden" : ""}${listing.removed_at ? " card-removed" : ""}`}>
+                  <li key={listing.id} className={`card${isHidden(listing.id) ? " card-hidden" : ""}${listing.removed_at || listing.is_sold ? " card-removed" : ""}`}>
                     <div className="card-img-wrap">
                       <ImgWithFallback src={listing.image_url} alt={listing.title} fallbackText={t("no_image")} />
                       <button className={`bookmark-btn${isSaved(listing.id) ? " active" : ""}`} onClick={() => toggle(listing.id)} aria-label={t("save_listing")}>🔖</button>
@@ -366,6 +370,8 @@ export default function App() {
                       <div className="card-badges">
                         {(() => { const dt = (listing.drivetrain as keyof typeof DRIVETRAIN_LABEL | null) ?? getDrivetrain(listing); return dt ? <span className={`drivetrain-badge dt-${dt.toLowerCase()}${filters.drivetrain === dt ? " badge-active" : " badge-clickable"}`} onClick={() => setFilters((f) => ({ ...f, drivetrain: f.drivetrain === dt ? undefined : dt }))}>{DRIVETRAIN_LABEL[dt] ?? dt}</span> : null; })()}
                         {listing.autopilot && <span className={`autopilot-badge ap-${listing.autopilot.toLowerCase()}${filters.autopilot === listing.autopilot ? " badge-active" : " badge-clickable"}`} onClick={() => setFilters((f) => ({ ...f, autopilot: f.autopilot === listing.autopilot ? undefined : listing.autopilot! }))}>{listing.autopilot}</span>}
+                        {(() => { const c = getCountry(listing.source); return c ? <span className={`country-badge country-${c.code.toLowerCase()}`} title={c.name}>{c.flag} {c.code}</span> : null; })()}
+                        {listing.is_sold && <span className="sold-badge">{t("badge_sold")}</span>}
                         {listing.auction_date && <a className="auction-badge badge-clickable" href="#/auctions">🔨 Auction</a>}
                       </div>
                       <div className="price-row">

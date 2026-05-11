@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "./i18n";
 import type { ListingFilters } from "./types";
 
-const MODELS = ["Model S", "Model 3", "Model X", "Model Y"] as const;
-const SOURCES = ["tesla", "leboncoin", "lacentrale", "capcar", "lbauto", "aramisauto", "gmecars", "renew", "heycar", "alcopa"] as const;
+const MODELS = ["Model S", "Model 3", "Model X", "Model Y", "Cybertruck", "Roadster"] as const;
+const SOURCES = ["tesla", "leboncoin", "lacentrale", "capcar", "lbauto", "aramisauto", "gmecars", "renew", "heycar", "alcopa", "mmxbv", "nikola"] as const;
 const DRIVETRAINS = ["RWD", "AWD", "Performance", "Plaid"] as const;
 const AUTOPILOTS = ["EAP", "FSD"] as const;
 const SEATS_OPTIONS = [5, 6, 7] as const;
@@ -215,6 +215,14 @@ export default function Sidebar({ filters, setFilters, defaultLimit, resetKey, b
         >
           <span className="new-only-track"><span className="new-only-thumb" /></span>
           {t("filter_new")}
+        </button>
+        <button
+          type="button"
+          className={`new-only-btn ${filters.hide_sold ? "active" : ""}`}
+          onClick={() => setFilters(f => ({ ...f, hide_sold: !f.hide_sold }))}
+        >
+          <span className="new-only-track"><span className="new-only-thumb" /></span>
+          {t("filter_hide_sold")}
         </button>
       </SidebarSection>
     </aside>

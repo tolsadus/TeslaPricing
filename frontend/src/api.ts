@@ -20,6 +20,7 @@ const COLOR_OR: Record<string, string> = {
 
 function applyFilters<T>(query: T, filters: ListingFilters): T {
   let q = query as any;
+  if (filters.hide_sold) q = q.eq("is_sold", false).is("removed_at", null);
   if (filters.model) q = q.ilike("model", `%${filters.model}%`);
   if (filters.drivetrain) q = q.eq("drivetrain", filters.drivetrain);
   if (filters.autopilot) q = q.eq("autopilot", filters.autopilot);
@@ -29,7 +30,7 @@ function applyFilters<T>(query: T, filters: ListingFilters): T {
   if (filters.max_price !== undefined) q = q.lte("price_eur", filters.max_price);
   if (filters.min_year !== undefined) q = q.gte("year", filters.min_year);
   if (filters.max_year !== undefined) q = q.lte("year", filters.max_year);
-  if (filters.new_only) q = q.lte("mileage_km", 100);
+  if (filters.new_only) q = q.lte("mileage_km", 1000);
   else {
     if (filters.min_mileage !== undefined) q = q.gte("mileage_km", filters.min_mileage);
     if (filters.max_mileage !== undefined) q = q.lte("mileage_km", filters.max_mileage);

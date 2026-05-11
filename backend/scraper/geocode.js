@@ -4,6 +4,20 @@ const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search'
 const USER_AGENT = 'TeslaPricing/1.0 (https://github.com/tolsadus/TeslaPricing)'
 const NOMINATIM_MIN_INTERVAL_MS = 1100 // Nominatim policy: <= 1 req/sec
 
+const COUNTRY_NAMES = { FR: 'France', BE: 'Belgium', NL: 'Netherlands' }
+
+const SOURCE_COUNTRY = {
+  tesla: 'FR', leboncoin: 'FR', lacentrale: 'FR', capcar: 'FR',
+  lbauto: 'FR', aramisauto: 'FR', gmecars: 'FR', renew: 'FR',
+  heycar: 'FR', alcopa: 'FR',
+  nikola: 'BE',
+  mmxbv: 'NL',
+}
+
+function countryFor(source) {
+  return SOURCE_COUNTRY[source] || 'FR'
+}
+
 let lastNominatimCall = 0
 
 function normalizeLocation(raw) {
@@ -28,30 +42,31 @@ function isFrenchDeptCode(s) {
   return /^\d{1,3}$/.test(s)
 }
 
-async function lookupCity(client, name) {
+async function lookupCity(client, name, country) {
   const res = await client.query(
-    'SELECT latitude, longitude FROM cities WHERE name = $1',
-    [name.toLowerCase()]
+    'SELECT latitude, longitude FROM cities WHERE name = $1 AND country = $2',
+    [name.toLowerCase(), country]
   )
   if (res.rows.length === 0) return null
   const { latitude, longitude } = res.rows[0]
   return { lat: parseFloat(latitude), lng: parseFloat(longitude) }
 }
 
-async function saveCity(client, name, lat, lng) {
+async function saveCity(client, name, country, lat, lng) {
   await client.query(
-    `INSERT INTO cities (name, latitude, longitude) VALUES ($1, $2, $3)
-     ON CONFLICT (name) DO NOTHING`,
-    [name.toLowerCase(), lat, lng]
+    `INSERT INTO cities (name, country, latitude, longitude) VALUES ($1, $2, $3, $4)
+     ON CONFLICT (name, country) DO NOTHING`,
+    [name.toLowerCase(), country, lat, lng]
   )
 }
 
-async function callNominatim(query) {
+async function callNominatim(query, country) {
   const wait = NOMINATIM_MIN_INTERVAL_MS - (Date.now() - lastNominatimCall)
   if (wait > 0) await new Promise(r => setTimeout(r, wait))
   lastNominatimCall = Date.now()
 
-  const url = `${NOMINATIM_URL}?q=${encodeURIComponent(query)}&format=json&limit=1&countrycodes=fr`
+  const cc = country.toLowerCase()
+  const url = `${NOMINATIM_URL}?q=${encodeURIComponent(query)}&format=json&limit=1&countrycodes=${cc}`
   const res = await fetch(url, { headers: { 'User-Agent': USER_AGENT } })
   if (!res.ok) throw new Error(`Nominatim HTTP ${res.status}`)
   const data = await res.json()
@@ -62,20 +77,21 @@ async function callNominatim(query) {
   return { lat, lng }
 }
 
-async function geocode(client, rawLocation) {
+async function geocode(client, rawLocation, country = 'FR') {
   const normalized = normalizeLocation(rawLocation)
   if (!normalized) return null
 
-  const cached = await lookupCity(client, normalized)
+  const cached = await lookupCity(client, normalized, country)
   if (cached) return cached
 
-  const query = isFrenchDeptCode(normalized)
-    ? `Département ${normalized}, France`
-    : `${normalized}, France`
-  const fresh = await callNominatim(query)
+  const countryName = COUNTRY_NAMES[country] || country
+  const query = (country === 'FR' && isFrenchDeptCode(normalized))
+    ? `Département ${normalized}, ${countryName}`
+    : `${normalized}, ${countryName}`
+  const fresh = await callNominatim(query, country)
   if (!fresh) return null
-  await saveCity(client, normalized, fresh.lat, fresh.lng)
+  await saveCity(client, normalized, country, fresh.lat, fresh.lng)
   return fresh
 }
 
-module.exports = { geocode, normalizeLocation }
+module.exports = { geocode, normalizeLocation, countryFor }

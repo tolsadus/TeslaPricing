@@ -63,3 +63,23 @@ export const DRIVETRAIN_LABEL: Record<Drivetrain, string> = {
   Performance: "Perf",
   Plaid: "Plaid",
 };
+
+const SOURCE_COUNTRY: Record<string, { code: string; flag: string; name: string }> = {
+  tesla:      { code: "FR", flag: "🇫🇷", name: "France" },
+  leboncoin:  { code: "FR", flag: "🇫🇷", name: "France" },
+  lacentrale: { code: "FR", flag: "🇫🇷", name: "France" },
+  capcar:     { code: "FR", flag: "🇫🇷", name: "France" },
+  lbauto:     { code: "FR", flag: "🇫🇷", name: "France" },
+  aramisauto: { code: "FR", flag: "🇫🇷", name: "France" },
+  gmecars:    { code: "FR", flag: "🇫🇷", name: "France" },
+  renew:      { code: "FR", flag: "🇫🇷", name: "France" },
+  heycar:     { code: "FR", flag: "🇫🇷", name: "France" },
+  alcopa:     { code: "FR", flag: "🇫🇷", name: "France" },
+  nikola:     { code: "BE", flag: "🇧🇪", name: "Belgium" },
+  mmxbv:      { code: "NL", flag: "🇳🇱", name: "Netherlands" },
+};
+
+export function getCountry(source: string | null): { code: string; flag: string; name: string } | null {
+  if (!source) return null;
+  return SOURCE_COUNTRY[source] ?? null;
+}

@@ -2,8 +2,8 @@
 'use strict'
 
 const { Command } = require('commander')
-const { upsert, pool, refreshDelta, markRemovedByAge, getPastUnsoldAlcopa, markSold } = require('./db')
-const { geocode } = require('./geocode')
+const { upsert, pool, refreshDelta, markRemovedByAge, getPastUnsoldAlcopa, markSold, getKnownSoldIds } = require('./db')
+const { geocode, countryFor } = require('./geocode')
 
 const PAGINATED_SOURCES = new Set(['leboncoin', 'lacentrale'])
 const STALE_DAYS_DEFAULT = 3
@@ -192,6 +192,32 @@ program
   })
 
 program
+  .command('nikola')
+  .description('Scrape Nikola Brussels Tesla listings')
+  .action(async () => {
+    const { scrape } = require('./nikola')
+    const total = { count: 0 }
+    const runStart = new Date().toISOString()
+    const knownSoldIds = await getKnownSoldIds('nikola')
+    await scrape({ onPage: makeOnPage(total), knownSoldIds })
+    console.log(`\nDone. Upserted ${total.count} listings.`)
+    await finalize('nikola', runStart, total)
+  })
+
+program
+  .command('mmxbv')
+  .description('Scrape MMX B.V. Tesla listings via wp-json API')
+  .action(async () => {
+    const { scrape } = require('./mmxbv')
+    const total = { count: 0 }
+    const runStart = new Date().toISOString()
+    const knownSoldIds = await getKnownSoldIds('mmxbv')
+    await scrape({ onPage: makeOnPage(total), knownSoldIds })
+    console.log(`\nDone. Upserted ${total.count} listings.`)
+    await finalize('mmxbv', runStart, total)
+  })
+
+program
   .command('lacentrale')
   .description('Scrape La Centrale Tesla listings via Playwright')
   .option('--pages <n>', 'number of pages', v => parseInt(v, 10), 1)
@@ -219,31 +245,32 @@ program
     const client = await pool.connect()
     try {
       const { rows: locations } = await client.query(
-        `SELECT location, COUNT(*) AS n
+        `SELECT location, source, COUNT(*) AS n
            FROM listings
           WHERE location IS NOT NULL
             AND (latitude IS NULL OR longitude IS NULL)
             AND removed_at IS NULL
-          GROUP BY location
+          GROUP BY location, source
           ORDER BY n DESC`
       )
-      console.log(`[geo] ${locations.length} distinct locations to geocode`)
+      console.log(`[geo] ${locations.length} distinct (location, source) pairs to geocode`)
       let hit = 0, miss = 0
       for (let i = 0; i < locations.length; i++) {
-        const { location, n } = locations[i]
+        const { location, source, n } = locations[i]
+        const country = countryFor(source)
         try {
-          const coords = await geocode(client, location)
+          const coords = await geocode(client, location, country)
           if (coords) {
             await client.query(
               `UPDATE listings SET latitude = $1, longitude = $2
-                WHERE location = $3 AND latitude IS NULL`,
-              [coords.lat, coords.lng, location]
+                WHERE location = $3 AND source = $4 AND latitude IS NULL`,
+              [coords.lat, coords.lng, location, source]
             )
             hit++
-            console.log(`  [${i + 1}/${locations.length}] ${location} → ${coords.lat.toFixed(3)},${coords.lng.toFixed(3)} (${n} listings)`)
+            console.log(`  [${i + 1}/${locations.length}] ${location} [${country}] → ${coords.lat.toFixed(3)},${coords.lng.toFixed(3)} (${n} listings)`)
           } else {
             miss++
-            console.log(`  [${i + 1}/${locations.length}] ${location} → no result (${n} listings)`)
+            console.log(`  [${i + 1}/${locations.length}] ${location} [${country}] → no result (${n} listings)`)
           }
         } catch (err) {
           miss++

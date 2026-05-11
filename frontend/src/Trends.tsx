@@ -8,6 +8,8 @@ const MODEL_COLORS: Record<string, string> = {
   "Model Y": "#c0392b",
   "Model S": "#2471a3",
   "Model X": "#1e8449",
+  "Cybertruck": "#7f8c8d",
+  "Roadster": "#e67e22",
 };
 const FALLBACK_COLORS = ["#8e44ad", "#d35400", "#16a085", "#f39c12"];
 

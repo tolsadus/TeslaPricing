@@ -27,7 +27,9 @@ const en = {
   filter_price: "Price",
   filter_year: "Year",
   filter_mileage: "Mileage",
-  filter_new: "New <100 km",
+  filter_new: "New <1,000 km",
+  filter_hide_sold: "Hide unavailable",
+  badge_sold: "Sold",
   input_min: "Min",
   input_max: "Max",
   // Sort options
@@ -212,7 +214,9 @@ const fr: Record<TKey, string> = {
   filter_price: "Prix",
   filter_year: "Année",
   filter_mileage: "Kilométrage",
-  filter_new: "Neuf <100 km",
+  filter_new: "Neuf <1 000 km",
+  filter_hide_sold: "Masquer indispos",
+  badge_sold: "Vendu",
   input_min: "Min",
   input_max: "Max",
   // Sort options

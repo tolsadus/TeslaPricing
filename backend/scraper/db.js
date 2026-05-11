@@ -5,7 +5,7 @@ require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') }
 const fs = require('fs')
 const path = require('path')
 const { Pool } = require('pg')
-const { geocode } = require('./geocode')
+const { geocode, countryFor } = require('./geocode')
 
 const BATCH_SIZE = 500
 
@@ -183,7 +183,7 @@ async function fillGeo(rows) {
   try {
     for (const row of todo) {
       try {
-        const coords = await geocode(client, row.location)
+        const coords = await geocode(client, row.location, countryFor(row.source))
         if (coords) {
           row.latitude = coords.lat
           row.longitude = coords.lng
@@ -239,6 +239,7 @@ async function markRemovedByAge(source, days = 7) {
         SET removed_at = NOW()
       WHERE source = $1
         AND removed_at IS NULL
+        AND is_sold = false
         AND scraped_at < NOW() - ($2 || ' days')::interval
       RETURNING id`,
     [source, String(days)]
@@ -269,4 +270,12 @@ async function markSold(ids) {
   return res.rowCount
 }
 
-module.exports = { pool, upsert, refreshDelta, markRemovedByAge, getPastUnsoldAlcopa, markSold }
+async function getKnownSoldIds(source) {
+  const res = await pool.query(
+    `SELECT external_id FROM listings WHERE source = $1 AND is_sold = true`,
+    [source]
+  )
+  return new Set(res.rows.map(r => r.external_id))
+}
+
+module.exports = { pool, upsert, refreshDelta, markRemovedByAge, getPastUnsoldAlcopa, markSold, getKnownSoldIds }

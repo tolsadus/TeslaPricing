@@ -70,10 +70,11 @@ function parseListing({ vehicleId, href, title, altText, priceText, imageUrl }) 
   const yearMatch = text.match(/\b((?:19|20)\d{2})\b/)
   if (yearMatch) year = parseInt(yearMatch[1], 10)
 
-  // Mileage
+  // Mileage. Title may contain BOTH range ("409km WLTP") and mileage ("35 145 km").
+  // Skip any "Xkm WLTP" and take the last remaining km value.
   let mileage_km = null
-  const kmMatch = text.match(/([\d][\d\s]*)\s*km/i)
-  if (kmMatch) mileage_km = parseIntSafe(kmMatch[1])
+  const kmMatches = [...text.matchAll(/([\d][\d\s]*?)\s*km(?!\s*wltp)/gi)]
+  if (kmMatches.length > 0) mileage_km = parseIntSafe(kmMatches[kmMatches.length - 1][1])
 
   // Version: parts[1] stripped of fuel type
   let version = null

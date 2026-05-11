@@ -3,10 +3,11 @@ import { searchListings, fetchModelCounts } from "./api";
 import type { Listing, ListingFilters } from "./types";
 import { useTranslation } from "./i18n";
 
-const MODELS = ["Model S", "Model 3", "Model X", "Model Y"] as const;
+const MODELS = ["Model S", "Model 3", "Model X", "Model Y", "Cybertruck", "Roadster"] as const;
 
 const MODEL_SHORTCUTS: Record<string, string> = {
   m3: "Model 3", my: "Model Y", ms: "Model S", mx: "Model X",
+  ct: "Cybertruck", cybertruck: "Cybertruck", roadster: "Roadster",
 };
 
 const DRIVETRAIN_PATTERNS: { rx: RegExp; value: "RWD" | "AWD" | "Performance" | "Plaid"; label: string }[] = [

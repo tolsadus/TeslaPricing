@@ -856,6 +856,31 @@ html, body {
   text-decoration: none;
 }
 
+.country-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
+}
+.country-fr { background: #eef2ff; color: #3730a3; }
+.country-be { background: #fef3c7; color: #92400e; }
+.country-nl { background: #ffedd5; color: #c2410c; }
+
+.sold-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
+  background: #fee2e2;
+  color: #991b1b;
+}
+
 .price-delta {
   font-size: 0.8rem;
   font-weight: 500;
