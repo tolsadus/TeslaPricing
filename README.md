@@ -8,12 +8,17 @@ Aggregated Tesla used-car listings scraped from multiple French marketplaces. Re
 
 ## Features
 
-- Listings page with sidebar filters (model, price range, year, source) and sort (price, mileage, year, crawl date)
-- Infinite scroll with debounced filter updates
-- Detail page with photo carousel and per-listing price history chart
-- Trends page with average price evolution per model over time (Model 3, Model Y, Model S, Model X)
-- Price change tracking — new history entry recorded whenever a price changes
-- Deployed automatically to GitHub Pages on every push to `main`
+- **Listings page** — card-style filter sidebar (Model tiles, Price, Year, Mileage with "new only" toggle, Drivetrain, Autopilot, Seats, Color, Source) plus a horizontal sort bar at the top (latest, price ↑/↓, mileage ↑/↓, year, biggest drop in € and %). Infinite scroll with debounced updates, 4-per-row grid.
+- **Click-to-filter source** — clicking a listing card's source pill (e.g. "TESLA", "LACENTRALE") toggles the source filter for the whole grid.
+- **Hide & reset** — eye icon on each card hides a listing; sidebar surfaces hidden count with both "Show hidden" and "Reset hidden" actions.
+- **Watchlist & Compare** — bookmark listings or compare up to 3 side-by-side (price, mileage, options, history).
+- **Deals page** — biggest active price drops, with top-3 podium.
+- **Auctions page** — separate view for Alcopa auction listings.
+- **Map view** — geolocated dealer markers filtered by the same sidebar.
+- **Trends page** — average price evolution per model over time (Model 3, Y, S, X) with price-change tracking (new history entry on every price change).
+- **In-feed ad scaffolding** — placeholder card every 20 listings, gated behind a `SHOW_ADS` flag and ready to wire to AdSense once a CMP is set up.
+- **i18n (EN/FR), light/dark theme, Supabase auth** (Google sign-in syncs watchlist/hidden across devices).
+- Deployed automatically to GitHub Pages on every push to `main`.
 
 ## Sources
 
@@ -34,8 +39,8 @@ Aggregated Tesla used-car listings scraped from multiple French marketplaces. Re
 
 ## Stack
 
-- **Backend** — Node.js 24, Playwright (stealth), Supabase (PostgreSQL)
-- **Frontend** — React 19, TypeScript, Vite 7, Supabase JS client
+- **Backend** — Node.js 26, Playwright (stealth), Supabase (PostgreSQL)
+- **Frontend** — React 19, TypeScript, Vite 8, Supabase JS client
 - **Hosting** — GitHub Pages (frontend), Supabase (database)
 
 ## Setup

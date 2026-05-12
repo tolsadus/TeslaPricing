@@ -61,5 +61,13 @@ export function useHidden(user: User | null) {
 
   const isHidden = useCallback((id: number) => hidden.has(id), [hidden]);
 
-  return { hidden, toggle, isHidden };
+  const clearAll = useCallback(() => {
+    setHidden(new Set());
+    lsSave(new Set());
+    if (user) {
+      supabase.from("user_hidden").delete().eq("user_id", user.id).then(() => {});
+    }
+  }, [user]);
+
+  return { hidden, toggle, isHidden, clearAll };
 }

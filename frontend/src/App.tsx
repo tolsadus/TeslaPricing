@@ -22,6 +22,8 @@ import { useTranslation } from "./i18n";
 import type { Listing, ListingFilters } from "./types";
 import { getDrivetrain, DRIVETRAIN_LABEL, formatFuel, getCountry } from "./utils";
 
+const SHOW_ADS = false;
+
 function formatPrice(v: number | null, locale: string): string {
   if (v === null) return "—";
   return new Intl.NumberFormat(locale, { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(v);
@@ -51,6 +53,46 @@ function useHashRoute(): string {
     return () => window.removeEventListener("hashchange", onChange);
   }, []);
   return hash;
+}
+
+function SortBar({ filters, setFilters }: {
+  filters: ListingFilters;
+  setFilters: (f: ListingFilters | ((prev: ListingFilters) => ListingFilters)) => void;
+}) {
+  const { t } = useTranslation();
+  const options = [
+    { label: t("sort_latest"),           sort_by: "scraped_at" as const, sort_dir: "desc" as const },
+    { label: t("sort_price_asc"),        sort_by: "price"      as const, sort_dir: "asc"  as const },
+    { label: t("sort_price_desc"),       sort_by: "price"      as const, sort_dir: "desc" as const },
+    { label: t("sort_mileage_asc"),      sort_by: "mileage_km" as const, sort_dir: "asc"  as const },
+    { label: t("sort_mileage_desc"),     sort_by: "mileage_km" as const, sort_dir: "desc" as const },
+    { label: t("sort_year_newest"),      sort_by: "year"       as const, sort_dir: "desc" as const },
+    { label: t("sort_year_oldest"),      sort_by: "year"       as const, sort_dir: "asc"  as const },
+    { label: t("sort_biggest_drop_eur"), sort_by: "price_delta" as const, sort_dir: "desc" as const },
+    { label: t("sort_biggest_drop_pct"), sort_by: "drop_pct"    as const, sort_dir: "desc" as const },
+  ];
+  const currentKey = `${filters.sort_by ?? "scraped_at"}:${filters.sort_dir ?? "desc"}`;
+  return (
+    <div className="sort-bar" role="group" aria-label={t("filter_sort")}>
+      <div className="sort-bar-options">
+        {options.map((o) => {
+          const key = `${o.sort_by}:${o.sort_dir}`;
+          const isActive = currentKey === key;
+          return (
+            <button
+              key={key}
+              type="button"
+              aria-pressed={isActive}
+              className={`sort-bar-btn${isActive ? " active" : ""}`}
+              onClick={() => setFilters({ ...filters, sort_by: o.sort_by, sort_dir: o.sort_dir })}
+            >
+              {o.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 function parseListingId(hash: string): number | null {
@@ -157,7 +199,7 @@ export default function App() {
   const [showAuthMenu, setShowAuthMenu] = useState(false);
   const [spotlightOpen, setSpotlightOpen] = useState(false);
   const { toggle, isSaved, saved } = useSaved(user);
-  const { toggle: toggleHidden, isHidden, hidden } = useHidden(user);
+  const { toggle: toggleHidden, isHidden, hidden, clearAll: clearHidden } = useHidden(user);
   const [showHidden, setShowHidden] = useState(false);
   const { ids: compareIds, toggle: toggleCompare, clear: clearCompare, isComparing } = useCompare();
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -299,10 +341,12 @@ export default function App() {
               hiddenCount={hidden.size}
               showHidden={showHidden}
               onToggleHidden={() => setShowHidden((v) => !v)}
+              onClearHidden={clearHidden}
             />
 
             {/* ── Main grid ── */}
             <main className="grid-wrap">
+              <SortBar filters={filters} setFilters={setFilters} />
               {(filters.drivetrain || filters.autopilot || filters.seats || filters.color_family) && (
                 <div className="active-tag-filters">
                   {filters.drivetrain && (
@@ -326,8 +370,21 @@ export default function App() {
               )}
 
               <ul className="grid">
-                {listings.filter((l) => showHidden || !isHidden(l.id)).map((listing) => (
-                  <li key={listing.id} className={`card${isHidden(listing.id) ? " card-hidden" : ""}${listing.removed_at || listing.is_sold ? " card-removed" : ""}`}>
+                {listings.filter((l) => showHidden || !isHidden(l.id)).flatMap((listing, idx) => {
+                  const items = [];
+                  if (SHOW_ADS && idx > 0 && idx % 20 === 0) {
+                    items.push(
+                      <li key={`ad-${idx}`} className="card card-ad" aria-label="Advertisement">
+                        <span className="card-ad-label">{t("card_ad_sponsored")}</span>
+                        <div className="card-ad-slot" data-ad-slot="in-feed-listing">
+                          {/* AdSense in-feed ad unit goes here — replace with <ins class="adsbygoogle" .../> snippet */}
+                          <span className="card-ad-placeholder">{t("card_ad_placeholder")}</span>
+                        </div>
+                      </li>
+                    );
+                  }
+                  items.push(
+                    <li key={listing.id} className={`card${isHidden(listing.id) ? " card-hidden" : ""}${listing.removed_at || listing.is_sold ? " card-removed" : ""}`}>
                     <div className="card-img-wrap">
                       <ImgWithFallback src={listing.image_url} alt={listing.title} fallbackText={t("no_image")} />
                       <button className={`bookmark-btn${isSaved(listing.id) ? " active" : ""}`} onClick={() => toggle(listing.id)} aria-label={t("save_listing")}>🔖</button>
@@ -362,11 +419,21 @@ export default function App() {
                       <p className="scraped-at">{t("card_crawled")} {formatDate(listing.scraped_at, locale)}</p>
                       <div className="cta-row">
                         <a className="btn btn-primary" href={`#/listing/${listing.id}`}>{t("card_view")}</a>
-                        <span className="btn btn-secondary">{listing.source}</span>
+                        <button
+                          type="button"
+                          className={`btn btn-secondary source-filter-btn${filters.source === listing.source ? " active" : ""}`}
+                          aria-pressed={filters.source === listing.source}
+                          title={filters.source === listing.source ? t("filter_all") : `${t("filter_source")}: ${listing.source}`}
+                          onClick={() => setFilters((f) => ({ ...f, source: f.source === listing.source ? undefined : listing.source }))}
+                        >
+                          {listing.source}
+                        </button>
                       </div>
                     </div>
                   </li>
-                ))}
+                  );
+                  return items;
+                })}
               </ul>
 
               <div ref={sentinelRef} className="load-more">

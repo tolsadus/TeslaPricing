@@ -9,45 +9,21 @@ const AUTOPILOTS = ["EAP", "FSD"] as const;
 const SEATS_OPTIONS = [5, 6, 7] as const;
 const COLOR_FAMILIES = ["Noir", "Blanc", "Gris", "Bleu", "Rouge"] as const;
 
-function sortKey(f: ListingFilters): string {
-  return `${f.sort_by ?? "scraped_at"}:${f.sort_dir ?? "desc"}`;
-}
-
-const sidebarSectionPrefs: Record<string, boolean> = (() => {
-  try { return JSON.parse(localStorage.getItem("sidebarSections") ?? "{}"); } catch { return {}; }
-})();
-
-function SidebarSection({ label, title, children, defaultOpen = false, className }: { label: string; title?: string; children: React.ReactNode; defaultOpen?: boolean; className?: string }) {
-  const [open, setOpen] = useState(() => sidebarSectionPrefs[label] ?? defaultOpen);
-
-  function toggle() {
-    setOpen(o => {
-      const next = !o;
-      sidebarSectionPrefs[label] = next;
-      localStorage.setItem("sidebarSections", JSON.stringify(sidebarSectionPrefs));
-      return next;
-    });
-  }
-
+function SidebarSection({ title, children, className }: { title: string; children: React.ReactNode; className?: string }) {
   return (
     <div className={`sidebar-section${className ? ` ${className}` : ""}`}>
-      <button type="button" className="sidebar-heading-btn" onClick={toggle}>
-        <span>{title ?? label}</span>
-        <span className={`sidebar-arrow ${open ? "open" : ""}`}>▾</span>
-      </button>
-      <div className={`sidebar-body-wrap ${open ? "open" : ""}`}>
-        <div className="sidebar-body">{children}</div>
-      </div>
+      <h3 className="sidebar-heading">{title}</h3>
+      <div className="sidebar-body">{children}</div>
     </div>
   );
 }
 
-function RangeInputs({ label, minVal, maxVal, unit, disabled, onChangeMin, onChangeMax }: {
-  label: string;
+function RangeInputs({ minVal, maxVal, unit, disabled, ariaLabel, onChangeMin, onChangeMax }: {
   minVal?: number;
   maxVal?: number;
   unit?: string;
   disabled?: boolean;
+  ariaLabel: string;
   onChangeMin: (v: number | undefined) => void;
   onChangeMax: (v: number | undefined) => void;
 }) {
@@ -57,18 +33,20 @@ function RangeInputs({ label, minVal, maxVal, unit, disabled, onChangeMin, onCha
   useEffect(() => { setLocalMin(minVal !== undefined ? String(minVal) : ""); }, [minVal]);
   useEffect(() => { setLocalMax(maxVal !== undefined ? String(maxVal) : ""); }, [maxVal]);
 
+  const minPlaceholder = unit ? `Min ${unit}` : "Min";
+  const maxPlaceholder = unit ? `Max ${unit}` : "Max";
+
   return (
-    <div className="range-inputs-group">
-      <span className="range-inputs-label">{label}{unit && <span className="range-inputs-unit">{unit}</span>}</span>
-      <div className="range-inputs-row">
-        <input type="number" className="range-input" placeholder="Min" disabled={disabled}
-          value={localMin} onChange={e => setLocalMin(e.target.value)}
-          onBlur={e => onChangeMin(e.target.value !== "" ? Number(e.target.value) : undefined)} />
-        <span className="range-inputs-sep">–</span>
-        <input type="number" className="range-input" placeholder="Max" disabled={disabled}
-          value={localMax} onChange={e => setLocalMax(e.target.value)}
-          onBlur={e => onChangeMax(e.target.value !== "" ? Number(e.target.value) : undefined)} />
-      </div>
+    <div className="range-inputs-row">
+      <input type="number" className="range-input" placeholder={minPlaceholder} disabled={disabled}
+        aria-label={`${ariaLabel} min`}
+        value={localMin} onChange={e => setLocalMin(e.target.value)}
+        onBlur={e => onChangeMin(e.target.value !== "" ? Number(e.target.value) : undefined)} />
+      <span className="range-inputs-sep">–</span>
+      <input type="number" className="range-input" placeholder={maxPlaceholder} disabled={disabled}
+        aria-label={`${ariaLabel} max`}
+        value={localMax} onChange={e => setLocalMax(e.target.value)}
+        onBlur={e => onChangeMax(e.target.value !== "" ? Number(e.target.value) : undefined)} />
     </div>
   );
 }
@@ -82,22 +60,11 @@ type SidebarProps = {
   hiddenCount?: number;
   showHidden?: boolean;
   onToggleHidden?: () => void;
+  onClearHidden?: () => void;
 };
 
-export default function Sidebar({ filters, setFilters, defaultLimit, resetKey, bumpResetKey, hiddenCount = 0, showHidden = false, onToggleHidden }: SidebarProps) {
+export default function Sidebar({ filters, setFilters, defaultLimit, resetKey, bumpResetKey, hiddenCount = 0, showHidden = false, onToggleHidden, onClearHidden }: SidebarProps) {
   const { t } = useTranslation();
-
-  const SORT_OPTIONS = [
-    { label: t("sort_latest"),      sort_by: "scraped_at" as const, sort_dir: "desc" as const },
-    { label: t("sort_price_asc"),   sort_by: "price"      as const, sort_dir: "asc"  as const },
-    { label: t("sort_price_desc"),  sort_by: "price"      as const, sort_dir: "desc" as const },
-    { label: t("sort_mileage_asc"), sort_by: "mileage_km" as const, sort_dir: "asc"  as const },
-    { label: t("sort_mileage_desc"),sort_by: "mileage_km" as const, sort_dir: "desc" as const },
-    { label: t("sort_year_newest"), sort_by: "year"       as const, sort_dir: "desc" as const },
-    { label: t("sort_year_oldest"), sort_by: "year"       as const, sort_dir: "asc"  as const },
-    { label: t("sort_biggest_drop_eur"), sort_by: "price_delta" as const, sort_dir: "desc" as const },
-    { label: t("sort_biggest_drop_pct"), sort_by: "drop_pct"    as const, sort_dir: "desc" as const },
-  ];
 
   return (
     <aside className="sidebar">
@@ -107,8 +74,6 @@ export default function Sidebar({ filters, setFilters, defaultLimit, resetKey, b
           className="reset-filters-btn"
           onClick={() => {
             setFilters({ sort_by: "scraped_at", sort_dir: "desc", limit: defaultLimit });
-            Object.keys(sidebarSectionPrefs).forEach(k => { sidebarSectionPrefs[k] = false; });
-            localStorage.setItem("sidebarSections", JSON.stringify(sidebarSectionPrefs));
             bumpResetKey();
           }}
         >
@@ -117,6 +82,17 @@ export default function Sidebar({ filters, setFilters, defaultLimit, resetKey, b
         {hiddenCount > 0 && onToggleHidden && (
           <button type="button" className="reset-filters-btn" onClick={onToggleHidden}>
             {showHidden ? t("hidden_hide_count", { n: hiddenCount }) : t("hidden_show_count", { n: hiddenCount })}
+          </button>
+        )}
+        {hiddenCount > 0 && onClearHidden && (
+          <button
+            type="button"
+            className="reset-filters-btn"
+            onClick={() => {
+              if (window.confirm(t("hidden_clear_confirm", { n: hiddenCount }))) onClearHidden();
+            }}
+          >
+            {t("hidden_clear")}
           </button>
         )}
       </div>
@@ -133,97 +109,41 @@ export default function Sidebar({ filters, setFilters, defaultLimit, resetKey, b
           </button>
         </div>
         <div className="model-grid">
-          {MODELS.map((m) => (
-            <button
-              key={m}
-              type="button"
-              className={`model-tile ${filters.model === m ? "active" : ""}`}
-              onClick={() => setFilters({ ...filters, model: m })}
-            >
-              {m}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="sidebar-grid">
-      <SidebarSection key={`Source-${resetKey}`} label="Source" title={t("filter_source")}>
-        <div className="model-options">
-          <button type="button" className={`model-btn ${!filters.source ? "active" : ""}`}
-            onClick={() => setFilters({ ...filters, source: undefined })}>{t("filter_all")}</button>
-          {SOURCES.map((s) => (
-            <button key={s} type="button"
-              className={`model-btn ${filters.source === s ? "active" : ""}`}
-              onClick={() => setFilters({ ...filters, source: filters.source === s ? undefined : s })}>{s}</button>
-          ))}
-        </div>
-      </SidebarSection>
-
-      <SidebarSection key={`Sort-${resetKey}`} label="Sort" title={t("filter_sort")}>
-        <div className="sort-options">
-          {SORT_OPTIONS.map((o) => {
-            const key = `${o.sort_by}:${o.sort_dir}`;
+          {MODELS.map((m) => {
+            const isActive = filters.model === m;
             return (
-              <button key={key} type="button"
-                className={`sort-btn ${sortKey(filters) === key ? "active" : ""}`}
-                onClick={() => setFilters({ ...filters, sort_by: o.sort_by, sort_dir: o.sort_dir })}>{o.label}</button>
+              <button
+                key={m}
+                type="button"
+                aria-pressed={isActive}
+                className={`model-tile ${isActive ? "active" : ""}`}
+                onClick={() => setFilters({ ...filters, model: m })}
+              >
+                {m}
+              </button>
             );
           })}
         </div>
-      </SidebarSection>
+      </div>
 
-      <SidebarSection key={`Drivetrain-${resetKey}`} label="Drivetrain" title={t("filter_drivetrain")}>
-        <div className="model-options">
-          {DRIVETRAINS.map((d) => (
-            <button key={d} type="button"
-              className={`model-btn ${filters.drivetrain === d ? "active" : ""}`}
-              onClick={() => setFilters((f) => ({ ...f, drivetrain: f.drivetrain === d ? undefined : d }))}>{d}</button>
-          ))}
-        </div>
-      </SidebarSection>
-
-      <SidebarSection key={`Autopilot-${resetKey}`} label="Autopilot" title={t("filter_autopilot")}>
-        <div className="model-options">
-          {AUTOPILOTS.map((a) => (
-            <button key={a} type="button"
-              className={`model-btn ${filters.autopilot === a ? "active" : ""}`}
-              onClick={() => setFilters((f) => ({ ...f, autopilot: f.autopilot === a ? undefined : a }))}>{a}</button>
-          ))}
-        </div>
-      </SidebarSection>
-
-      <SidebarSection key={`Seats-${resetKey}`} label="Seats" title={t("filter_seats")}>
-        <div className="model-options">
-          {SEATS_OPTIONS.map((s) => (
-            <button key={s} type="button"
-              className={`model-btn ${filters.seats === s ? "active" : ""}`}
-              onClick={() => setFilters((f) => ({ ...f, seats: f.seats === s ? undefined : s }))}>{s}</button>
-          ))}
-        </div>
-      </SidebarSection>
-
-      <SidebarSection key={`Color-${resetKey}`} label="Color" title={t("filter_color")}>
-        <div className="model-options">
-          {COLOR_FAMILIES.map((c) => (
-            <button key={c} type="button"
-              className={`model-btn ${filters.color_family === c ? "active" : ""}`}
-              onClick={() => setFilters((f) => ({ ...f, color_family: f.color_family === c ? undefined : c }))}>{c}</button>
-          ))}
-        </div>
-      </SidebarSection>
-
-      <SidebarSection key={`Filters-${resetKey}`} label="Filters" title={t("filter_filters")} className="sidebar-section-span">
-        <RangeInputs label={t("filter_price")} unit="€"
+      <SidebarSection key={`Price-${resetKey}`} title={t("filter_price")}>
+        <RangeInputs ariaLabel={t("filter_price")} unit="€"
           minVal={filters.min_price} maxVal={filters.max_price}
           onChangeMin={v => setFilters(f => ({ ...f, min_price: v }))}
           onChangeMax={v => setFilters(f => ({ ...f, max_price: v }))}
         />
-        <RangeInputs label={t("filter_year")}
+      </SidebarSection>
+
+      <SidebarSection key={`Year-${resetKey}`} title={t("filter_year")}>
+        <RangeInputs ariaLabel={t("filter_year")}
           minVal={filters.min_year} maxVal={filters.max_year}
           onChangeMin={v => setFilters(f => ({ ...f, min_year: v }))}
           onChangeMax={v => setFilters(f => ({ ...f, max_year: v }))}
         />
-        <RangeInputs label={t("filter_mileage")} unit="km"
+      </SidebarSection>
+
+      <SidebarSection key={`Mileage-${resetKey}`} title={t("filter_mileage")}>
+        <RangeInputs ariaLabel={t("filter_mileage")} unit="km"
           minVal={filters.min_mileage} maxVal={filters.max_mileage}
           disabled={filters.new_only}
           onChangeMin={v => setFilters(f => ({ ...f, min_mileage: v }))}
@@ -237,6 +157,76 @@ export default function Sidebar({ filters, setFilters, defaultLimit, resetKey, b
           <span className="new-only-track"><span className="new-only-thumb" /></span>
           {t("filter_new")}
         </button>
+      </SidebarSection>
+
+      <SidebarSection title={t("filter_drivetrain")}>
+        <div className="chip-options">
+          {DRIVETRAINS.map((d) => {
+            const isActive = filters.drivetrain === d;
+            return (
+              <button key={d} type="button" aria-pressed={isActive}
+                className={`chip-btn ${isActive ? "active" : ""}`}
+                onClick={() => setFilters((f) => ({ ...f, drivetrain: f.drivetrain === d ? undefined : d }))}>{d}</button>
+            );
+          })}
+        </div>
+      </SidebarSection>
+
+      <SidebarSection title={t("filter_autopilot")}>
+        <div className="chip-options">
+          {AUTOPILOTS.map((a) => {
+            const isActive = filters.autopilot === a;
+            return (
+              <button key={a} type="button" aria-pressed={isActive}
+                className={`chip-btn ${isActive ? "active" : ""}`}
+                onClick={() => setFilters((f) => ({ ...f, autopilot: f.autopilot === a ? undefined : a }))}>{a}</button>
+            );
+          })}
+        </div>
+      </SidebarSection>
+
+      <SidebarSection title={t("filter_seats")}>
+        <div className="chip-options">
+          {SEATS_OPTIONS.map((s) => {
+            const isActive = filters.seats === s;
+            return (
+              <button key={s} type="button" aria-pressed={isActive}
+                className={`chip-btn ${isActive ? "active" : ""}`}
+                onClick={() => setFilters((f) => ({ ...f, seats: f.seats === s ? undefined : s }))}>{s}</button>
+            );
+          })}
+        </div>
+      </SidebarSection>
+
+      <SidebarSection title={t("filter_color")}>
+        <div className="chip-options">
+          {COLOR_FAMILIES.map((c) => {
+            const isActive = filters.color_family === c;
+            return (
+              <button key={c} type="button" aria-pressed={isActive}
+                className={`chip-btn ${isActive ? "active" : ""}`}
+                onClick={() => setFilters((f) => ({ ...f, color_family: f.color_family === c ? undefined : c }))}>{c}</button>
+            );
+          })}
+        </div>
+      </SidebarSection>
+
+      <SidebarSection title={t("filter_source")}>
+        <div className="model-options">
+          <button type="button" aria-pressed={!filters.source} className={`model-btn ${!filters.source ? "active" : ""}`}
+            onClick={() => setFilters({ ...filters, source: undefined })}>{t("filter_all")}</button>
+          {SOURCES.map((s) => {
+            const isActive = filters.source === s;
+            return (
+              <button key={s} type="button" aria-pressed={isActive}
+                className={`model-btn ${isActive ? "active" : ""}`}
+                onClick={() => setFilters({ ...filters, source: filters.source === s ? undefined : s })}>{s}</button>
+            );
+          })}
+        </div>
+      </SidebarSection>
+
+      <div className="sidebar-section">
         <button
           type="button"
           className={`new-only-btn ${filters.hide_sold ? "active" : ""}`}
@@ -245,7 +235,6 @@ export default function Sidebar({ filters, setFilters, defaultLimit, resetKey, b
           <span className="new-only-track"><span className="new-only-thumb" /></span>
           {t("filter_hide_sold")}
         </button>
-      </SidebarSection>
       </div>
     </aside>
   );
