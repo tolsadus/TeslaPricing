@@ -73,7 +73,7 @@ async function extractFromDom(page) {
         // Price: text inside the price container, strip non-numeric except space
         const priceEl = card.querySelector('[class*="vehiclePrice"]')
         const priceText = priceEl?.textContent?.replace(/[^\d]/g, '') || ''
-        const price_eur = priceText ? parseInt(priceText, 10) : null
+        const price = priceText ? parseInt(priceText, 10) : null
 
         // Image: first img with a lacentrale pictures CDN src
         const img = card.querySelector('img[src*="pictures.lacentrale"]')
@@ -83,7 +83,7 @@ async function extractFromDom(page) {
         const locationEl = card.querySelector('[class*="sellerLocation"], [class*="location"], [class*="city"]')
         const location = locationEl?.textContent?.trim() || null
 
-        results.push({ ref, url, title, version, year, mileage_km, fuel, gearbox, price_eur, image_url, location, color, horse_power, doors, seats })
+        results.push({ ref, url, title, version, year, mileage_km, fuel, gearbox, price, image_url, location, color, horse_power, doors, seats })
       } catch {}
     }
     return results
@@ -106,7 +106,7 @@ async function extractFromDom(page) {
       make,
       model,
       version: r.version || null,
-      price_eur: r.price_eur && r.price_eur > 1000 ? r.price_eur : null,
+      price: r.price && r.price > 1000 ? r.price : null,
       year: r.year || null,
       mileage_km: r.mileage_km || null,
       fuel: r.fuel || null,

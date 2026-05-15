@@ -42,7 +42,7 @@ function popupHtml(l: Listing, locale: string, t: (k: import("./i18n").TKey) => 
       ${img}
       <div class="map-popup-body">
         <h4>${escapeHtml(l.title)}</h4>
-        <div class="map-popup-price">${formatPrice(l.price_eur, locale)}</div>
+        <div class="map-popup-price">${formatPrice(l.price, locale)}</div>
         <div class="map-popup-meta">${escapeHtml(meta)}</div>
         <a class="map-popup-link" href="#/listing/${l.id}">${t("card_view")} →</a>
       </div>

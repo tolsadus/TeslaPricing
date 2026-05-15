@@ -2,6 +2,7 @@
 'use strict'
 
 const { Command } = require('commander')
+const cliProgress = require('cli-progress')
 const { upsert, pool, refreshDelta, markRemovedByAge, getPastUnsoldAlcopa, markSold, getKnownSoldIds } = require('./db')
 const { geocode, countryFor } = require('./geocode')
 
@@ -34,11 +35,11 @@ async function finalize(source, runStart, total) {
   await pool.end()
 }
 
-function makeOnPage(total) {
+function makeOnPage(total, { quiet = false } = {}) {
   return async (listings) => {
-    const n = await upsert(listings)
+    const n = await upsert(listings, { quiet })
     total.count += n
-    console.log(`  [db] upserted ${n} (total so far: ${total.count})`)
+    if (!quiet) console.log(`  [db] upserted ${n} (total so far: ${total.count})`)
   }
 }
 
@@ -89,11 +90,42 @@ program
   .command('tesla')
   .description('Scrape Tesla inventory')
   .option('--models <list>', 'comma-separated models (m3,my,ms,mx)', 'm3,my,ms,mx')
-  .action(async ({ models }) => {
-    const { scrape } = require('./tesla')
+  .option('--markets <list>', 'comma-separated markets (fr,es,be,de,it,nl,pt,at,ch,cz,dk,fi,gb,gr,hr,hu,ie,is,lu,no,pl,ro,se,si,tr)', 'fr')
+  .option('--concurrency <n>', 'markets to scrape in parallel', v => parseInt(v, 10), 5)
+  .action(async ({ models, markets, concurrency }) => {
+    const { scrape, CONDITIONS, flagEmoji } = require('./tesla')
+    const modelList = models.split(',')
+    const marketList = markets.split(',')
+    const stepsPerMarket = modelList.length * CONDITIONS.length
     const total = { count: 0 }
     const runStart = new Date().toISOString()
-    await scrape({ models: models.split(','), onPage: makeOnPage(total) })
+
+    const multibar = new cliProgress.MultiBar({
+      format: ' {flag} {market} |{bar}| {value}/{total}  {label}',
+      barCompleteChar: '█',
+      barIncompleteChar: '░',
+      hideCursor: true,
+      clearOnComplete: false,
+      autopadding: true,
+    })
+    const bars = new Map()
+    for (const mk of marketList) {
+      bars.set(mk, multibar.create(stepsPerMarket, 0, {
+        flag: flagEmoji(mk), market: mk.toUpperCase(), label: 'waiting',
+      }))
+    }
+
+    await scrape({
+      models: modelList,
+      markets: marketList,
+      concurrency,
+      onPage: makeOnPage(total, { quiet: true }),
+      onProgress: (mk, ev) => {
+        const b = bars.get(mk)
+        if (b) b.update(ev.step, { flag: ev.flag, market: ev.market, label: ev.label.slice(0, 36) });
+      },
+    })
+    multibar.stop()
     console.log(`\nDone. Upserted ${total.count} listings.`)
     await finalize('tesla', runStart, total)
   })

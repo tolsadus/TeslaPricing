@@ -75,10 +75,10 @@ function parseListing(body, vid) {
     else if (/^(?:gris(?:e)?|blanc(?:he)?|noir(?:e)?|rouge|bleu(?:e)?|vert(?:e)?|orange|jaune|marron|beige|argent[eé]?|violet(?:te)?|rose|bordeaux|anthracite)/i.test(value)) color = value
   }
 
-  let price_eur = null
+  let price = null
   const priceMatch = PRICE_RE.exec(body)
-  if (priceMatch) price_eur = parseInt_(priceMatch[1])
-  if (price_eur !== null && price_eur <= 1000) return null
+  if (priceMatch) price = parseInt_(priceMatch[1])
+  if (price !== null && price <= 1000) return null
 
   const titleParts = [make, model, version].filter(Boolean)
   const title = titleParts.length ? titleParts.join(' ') : vid
@@ -90,7 +90,7 @@ function parseListing(body, vid) {
     make: make ? make.toLowerCase().replace(/\b\w/g, c => c.toUpperCase()) : null,
     model,
     version,
-    price_eur,
+    price,
     year,
     mileage_km,
     fuel,

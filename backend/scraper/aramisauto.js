@@ -84,7 +84,7 @@ function parseListing({ vehicleId, href, title, altText, priceText, imageUrl }) 
       .trim() || null
   }
 
-  const price_eur = parseIntSafe(priceText)
+  const price = parseIntSafe(priceText)
 
   // Color: look for a bullet part that is only a color name
   let color = null
@@ -120,7 +120,7 @@ function parseListing({ vehicleId, href, title, altText, priceText, imageUrl }) 
     make,
     model,
     version,
-    price_eur: price_eur && price_eur > 1000 ? price_eur : null,
+    price: price && price > 1000 ? price : null,
     year,
     mileage_km,
     fuel,

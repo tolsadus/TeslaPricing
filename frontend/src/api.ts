@@ -5,7 +5,7 @@ const SORT_COLUMN: Record<string, string> = {
   scraped_at: "scraped_at",
   mileage_km: "mileage_km",
   year: "year",
-  price: "price_eur",
+  price: "price",
   price_delta: "price_delta",
   drop_pct: "drop_pct",
 };
@@ -26,8 +26,8 @@ function applyFilters<T>(query: T, filters: ListingFilters): T {
   if (filters.autopilot) q = q.eq("autopilot", filters.autopilot);
   if (filters.seats !== undefined) q = q.eq("seats", filters.seats);
   if (filters.color_family && COLOR_OR[filters.color_family]) q = q.or(COLOR_OR[filters.color_family]);
-  if (filters.min_price !== undefined) q = q.gte("price_eur", filters.min_price);
-  if (filters.max_price !== undefined) q = q.lte("price_eur", filters.max_price);
+  if (filters.min_price !== undefined) q = q.gte("price", filters.min_price);
+  if (filters.max_price !== undefined) q = q.lte("price", filters.max_price);
   if (filters.min_year !== undefined) q = q.gte("year", filters.min_year);
   if (filters.max_year !== undefined) q = q.lte("year", filters.max_year);
   if (filters.new_only) q = q.lte("mileage_km", 1000);
@@ -112,7 +112,7 @@ export async function fetchStats(): Promise<{ total: number; by_source: Record<s
 export async function fetchPriceHistory(id: number): Promise<PricePoint[]> {
   const { data, error } = await supabase
     .from("price_history")
-    .select("price_eur, recorded_at")
+    .select("price, recorded_at")
     .eq("listing_id", id)
     .order("recorded_at");
   if (error) throw new Error(error.message);
@@ -128,7 +128,7 @@ export async function fetchTrends(): Promise<TrendPoint[]> {
 export async function fetchListingsForMap(filters: ListingFilters = {}): Promise<Listing[]> {
   let query = supabase
     .from("listings_with_delta")
-    .select("id, source, title, model, price_eur, year, mileage_km, image_url, latitude, longitude, drivetrain, autopilot, location, url")
+    .select("id, source, title, model, price, year, mileage_km, image_url, latitude, longitude, drivetrain, autopilot, location, url")
     .not("latitude", "is", null)
     .not("longitude", "is", null)
     .limit(5000);

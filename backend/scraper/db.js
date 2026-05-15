@@ -44,21 +44,22 @@ function inferDrivetrain(row) {
 async function upsertBatch(client, rows, now) {
   // Step 1: fetch prior prices for all rows in this batch
   const priorRes = await client.query(
-    `SELECT l.source, l.external_id, l.price_eur
+    `SELECT l.source, l.external_id, l.price
      FROM listings l
      JOIN (SELECT unnest($1::text[]) s, unnest($2::text[]) e) pairs
        ON l.source = pairs.s AND l.external_id = pairs.e`,
     [rows.map(r => r.source), rows.map(r => r.external_id)]
   )
-  const priorMap = new Map(priorRes.rows.map(r => [`${r.source}:${r.external_id}`, r.price_eur]))
+  const priorMap = new Map(priorRes.rows.map(r => [`${r.source}:${r.external_id}`, r.price]))
 
   // Step 2: batch upsert all listings
   const upsertRes = await client.query(
     `INSERT INTO listings
-      (source, external_id, title, make, model, version, price_eur, year,
+      (source, external_id, title, make, model, version, price, year,
        mileage_km, fuel, gearbox, location, url, image_url, scraped_at,
        drivetrain, soh, color, horse_power, doors, seats, autopilot, tow_hitch,
-       auction_date, lot_number, vin, ct_url, is_sold, latitude, longitude)
+       auction_date, lot_number, vin, ct_url, is_sold, latitude, longitude,
+       currency, market)
      SELECT
        unnest($1::text[]),  unnest($2::text[]),  unnest($3::text[]),
        unnest($4::text[]),  unnest($5::text[]),  unnest($6::text[]),
@@ -71,13 +72,14 @@ async function upsertBatch(client, rows, now) {
        unnest($21::int[]),  unnest($22::text[]), unnest($23::bool[]),
        unnest($24::date[]), unnest($25::text[]), unnest($26::text[]),
        unnest($27::text[]), unnest($28::bool[]),
-       unnest($29::numeric[]), unnest($30::numeric[])
+       unnest($29::numeric[]), unnest($30::numeric[]),
+       unnest($31::text[]), unnest($32::text[])
      ON CONFLICT (source, external_id) DO UPDATE SET
        title        = EXCLUDED.title,
        make         = EXCLUDED.make,
        model        = EXCLUDED.model,
        version      = EXCLUDED.version,
-       price_eur    = EXCLUDED.price_eur,
+       price    = EXCLUDED.price,
        year         = EXCLUDED.year,
        mileage_km   = EXCLUDED.mileage_km,
        fuel         = EXCLUDED.fuel,
@@ -101,8 +103,10 @@ async function upsertBatch(client, rows, now) {
        is_sold      = EXCLUDED.is_sold,
        latitude     = COALESCE(EXCLUDED.latitude,  listings.latitude),
        longitude    = COALESCE(EXCLUDED.longitude, listings.longitude),
+       currency     = EXCLUDED.currency,
+       market       = COALESCE(EXCLUDED.market, listings.market),
        removed_at   = NULL
-     RETURNING id, source, external_id, price_eur`,
+     RETURNING id, source, external_id, price`,
     [
       rows.map(r => r.source),
       rows.map(r => r.external_id),
@@ -110,7 +114,7 @@ async function upsertBatch(client, rows, now) {
       rows.map(r => r.make ?? null),
       rows.map(r => r.model ?? null),
       rows.map(r => r.version ?? null),
-      rows.map(r => r.price_eur ?? null),
+      rows.map(r => r.price ?? null),
       rows.map(r => r.year ?? null),
       rows.map(r => r.mileage_km ?? null),
       rows.map(r => r.fuel ?? null),
@@ -134,6 +138,8 @@ async function upsertBatch(client, rows, now) {
       rows.map(r => r.is_sold ?? false),
       rows.map(r => r.latitude  ?? null),
       rows.map(r => r.longitude ?? null),
+      rows.map(r => r.currency ?? 'EUR'),
+      rows.map(r => r.market ?? null),
     ]
   )
 
@@ -142,15 +148,15 @@ async function upsertBatch(client, rows, now) {
   // Step 3: bulk insert price history only for rows whose price changed
   const changed = rows.filter(r => {
     const prior = priorMap.get(`${r.source}:${r.external_id}`)
-    return prior === undefined || prior !== r.price_eur
+    return prior === undefined || prior !== r.price
   })
   if (changed.length > 0) {
     await client.query(
-      `INSERT INTO price_history (listing_id, price_eur, recorded_at)
+      `INSERT INTO price_history (listing_id, price, recorded_at)
        SELECT unnest($1::int[]), unnest($2::numeric[]), unnest($3::timestamptz[])`,
       [
         changed.map(r => idMap.get(`${r.source}:${r.external_id}`)),
-        changed.map(r => r.price_eur ?? null),
+        changed.map(r => r.price ?? null),
         changed.map(() => now),
       ]
     )
@@ -173,7 +179,7 @@ async function upsertBatch(client, rows, now) {
   return upsertRes.rows.length
 }
 
-async function fillGeo(rows) {
+async function fillGeo(rows, quiet = false) {
   // Geocode listings before upserting so the inserts/updates carry lat/lng.
   // Cached lookups are cheap (DB read); only Nominatim misses are slow.
   const todo = rows.filter(r => r.location && (r.latitude == null || r.longitude == null))
@@ -183,7 +189,7 @@ async function fillGeo(rows) {
   try {
     for (const row of todo) {
       try {
-        const coords = await geocode(client, row.location, countryFor(row.source))
+        const coords = await geocode(client, row.location, row.country || countryFor(row.source))
         if (coords) {
           row.latitude = coords.lat
           row.longitude = coords.lng
@@ -196,16 +202,22 @@ async function fillGeo(rows) {
   } finally {
     client.release()
   }
-  if (hits > 0) console.log(`  [geo] geocoded ${hits}/${todo.length} new locations`)
+  if (hits > 0 && !quiet) console.log(`  [geo] geocoded ${hits}/${todo.length} new locations`)
 }
 
-async function upsert(rows) {
+async function upsert(rows, { quiet = false } = {}) {
   if (!rows.length) return 0
-  await fillGeo(rows)
+  const seen = new Map()
+  for (const r of rows) seen.set(`${r.source}:${r.external_id}`, r)
+  if (seen.size < rows.length) {
+    if (!quiet) console.log(`  [dedupe] dropped ${rows.length - seen.size} duplicate row(s)`)
+    rows = Array.from(seen.values())
+  }
+  await fillGeo(rows, quiet)
   const now = new Date().toISOString()
   let count = 0
   const total = rows.length
-  process.stdout.write(`  upserting 0/${total}`)
+  if (!quiet) process.stdout.write(`  upserting 0/${total}`)
 
   for (let i = 0; i < rows.length; i += BATCH_SIZE) {
     const batch = rows.slice(i, i + BATCH_SIZE)
@@ -216,7 +228,7 @@ async function upsert(rows) {
       await upsertBatch(client, batch, now)
       await client.query('COMMIT')
       count += batch.length
-      process.stdout.write(`\r  upserting ${count}/${total}`)
+      if (!quiet) process.stdout.write(`\r  upserting ${count}/${total}`)
     } catch (err) {
       try { await client.query('ROLLBACK') } catch (_) {}
       client.release(true)
@@ -225,7 +237,7 @@ async function upsert(rows) {
     client.release()
   }
 
-  process.stdout.write('\n')
+  if (!quiet) process.stdout.write('\n')
   return count
 }
 

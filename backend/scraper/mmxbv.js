@@ -62,10 +62,10 @@ function carToListing(car, sold = false) {
   const color = attrTaxonomyName(attrs, 'Kleur')
 
   const priceAttr = findAttr(attrs, 'Prijs')
-  let price_eur = null
+  let price = null
   if (priceAttr && priceAttr.value && typeof priceAttr.value === 'object') {
     const v = Object.values(priceAttr.value)[0]
-    if (typeof v === 'number' && v > 1000) price_eur = v
+    if (typeof v === 'number' && v > 1000) price = v
   }
 
   const perfLabel = attrTaxonomyName(attrs, 's/0-100 - Pk')
@@ -91,7 +91,7 @@ function carToListing(car, sold = false) {
     make: 'Tesla',
     model,
     version,
-    price_eur,
+    price,
     year,
     mileage_km,
     fuel: null,

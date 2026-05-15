@@ -34,7 +34,7 @@ function itemToListing(item) {
   const versionRaw = nameParts.replace(new RegExp(modelLabel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'), '').trim()
   version = versionRaw || null
 
-  const price_eur = item.offers?.price ?? null
+  const price = item.offers?.price ?? null
   const year = item.vehicleModelDate ?? null
   const mileage_km = item.mileageFromOdometer?.value ?? null
   const fuel = item.fuelType || null
@@ -55,7 +55,7 @@ function itemToListing(item) {
     make,
     model,
     version,
-    price_eur: price_eur && price_eur > 1000 ? price_eur : null,
+    price: price && price > 1000 ? price : null,
     year,
     mileage_km,
     fuel,

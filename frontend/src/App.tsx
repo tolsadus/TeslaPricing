@@ -407,7 +407,7 @@ export default function App() {
                         {listing.auction_date && <a className="auction-badge badge-clickable" href="#/auctions">🔨 Auction</a>}
                       </div>
                       <div className="price-row">
-                        <p className="price">{formatPrice(listing.price_eur, locale)}</p>
+                        <p className="price">{formatPrice(listing.price, locale)}</p>
                         {listing.price_delta !== null && listing.price_delta > 0 && listing.max_price !== null && (
                           <span className="price-delta delta-down"><s>{formatPrice(listing.max_price, locale)}</s></span>
                         )}

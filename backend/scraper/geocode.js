@@ -4,7 +4,15 @@ const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search'
 const USER_AGENT = 'TeslaPricing/1.0 (https://github.com/tolsadus/TeslaPricing)'
 const NOMINATIM_MIN_INTERVAL_MS = 1100 // Nominatim policy: <= 1 req/sec
 
-const COUNTRY_NAMES = { FR: 'France', BE: 'Belgium', NL: 'Netherlands' }
+const COUNTRY_NAMES = {
+  FR: 'France', BE: 'Belgium', NL: 'Netherlands', ES: 'Spain',
+  AT: 'Austria', CH: 'Switzerland', CZ: 'Czechia', DE: 'Germany',
+  DK: 'Denmark', FI: 'Finland', GB: 'United Kingdom', GR: 'Greece',
+  HR: 'Croatia', HU: 'Hungary', IE: 'Ireland', IS: 'Iceland',
+  IT: 'Italy', LU: 'Luxembourg', NO: 'Norway', PL: 'Poland',
+  PT: 'Portugal', RO: 'Romania', SE: 'Sweden', SI: 'Slovenia',
+  TR: 'Turkey',
+}
 
 const SOURCE_COUNTRY = {
   tesla: 'FR', leboncoin: 'FR', lacentrale: 'FR', capcar: 'FR',
@@ -19,6 +27,7 @@ function countryFor(source) {
 }
 
 let lastNominatimCall = 0
+let nominatimChain = Promise.resolve()
 
 function normalizeLocation(raw) {
   if (!raw) return null
@@ -60,21 +69,28 @@ async function saveCity(client, name, country, lat, lng) {
   )
 }
 
-async function callNominatim(query, country) {
-  const wait = NOMINATIM_MIN_INTERVAL_MS - (Date.now() - lastNominatimCall)
-  if (wait > 0) await new Promise(r => setTimeout(r, wait))
-  lastNominatimCall = Date.now()
+// Serialized through nominatimChain so concurrent callers can never breach
+// Nominatim's 1 req/sec policy, regardless of how many markets run in parallel.
+function callNominatim(query, country) {
+  const task = async () => {
+    const wait = NOMINATIM_MIN_INTERVAL_MS - (Date.now() - lastNominatimCall)
+    if (wait > 0) await new Promise(r => setTimeout(r, wait))
+    lastNominatimCall = Date.now()
 
-  const cc = country.toLowerCase()
-  const url = `${NOMINATIM_URL}?q=${encodeURIComponent(query)}&format=json&limit=1&countrycodes=${cc}`
-  const res = await fetch(url, { headers: { 'User-Agent': USER_AGENT } })
-  if (!res.ok) throw new Error(`Nominatim HTTP ${res.status}`)
-  const data = await res.json()
-  if (!Array.isArray(data) || data.length === 0) return null
-  const lat = parseFloat(data[0].lat)
-  const lng = parseFloat(data[0].lon)
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null
-  return { lat, lng }
+    const cc = country.toLowerCase()
+    const url = `${NOMINATIM_URL}?q=${encodeURIComponent(query)}&format=json&limit=1&countrycodes=${cc}`
+    const res = await fetch(url, { headers: { 'User-Agent': USER_AGENT } })
+    if (!res.ok) throw new Error(`Nominatim HTTP ${res.status}`)
+    const data = await res.json()
+    if (!Array.isArray(data) || data.length === 0) return null
+    const lat = parseFloat(data[0].lat)
+    const lng = parseFloat(data[0].lon)
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null
+    return { lat, lng }
+  }
+  const result = nominatimChain.then(task, task)
+  nominatimChain = result.then(() => {}, () => {})
+  return result
 }
 
 async function geocode(client, rawLocation, country = 'FR') {

@@ -29,7 +29,7 @@ test('parseListing: parses a full listing body', () => {
   assert.equal(listing.mileage_km, 52000)
   assert.equal(listing.fuel, 'Électrique')
   assert.equal(listing.gearbox, 'Automatique')
-  assert.equal(listing.price_eur, 34990)
+  assert.equal(listing.price, 34990)
   assert.match(listing.url, /gmecars\.fr.*12345/)
   assert.equal(listing.image_url, 'https://gmecars.fr/img.jpg')
 })

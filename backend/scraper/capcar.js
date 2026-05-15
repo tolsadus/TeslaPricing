@@ -48,7 +48,7 @@ function parseHit(hit) {
     make: brand,
     model: version || null,
     version: pkg || null,
-    price_eur: hit.price ?? null,
+    price: hit.price ?? null,
     year: hit.year ?? null,
     mileage_km: hit.mileage ?? null,
     fuel: ENERGY_MAP[energy] || (energy ? energy.charAt(0) + energy.slice(1).toLowerCase() : null),

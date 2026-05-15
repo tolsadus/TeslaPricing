@@ -235,7 +235,7 @@ export default function SearchBar({ onApplyFilters, autoFocus, onClose }: Props)
                   <div className="search-row-text">
                     <div className="search-row-title">{r.title}</div>
                     <div className="search-row-sub">
-                      {r.year ?? "—"} · {fmtKm(r.mileage_km)} · {fmtPrice(r.price_eur)}
+                      {r.year ?? "—"} · {fmtKm(r.mileage_km)} · {fmtPrice(r.price)}
                     </div>
                   </div>
                   <span className="search-row-chev">›</span>

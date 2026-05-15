@@ -63,7 +63,7 @@ function adToListing(ad) {
   ].filter(Boolean)
   const title = titleParts.join(' ')
 
-  const price_eur = Number.isFinite(ad.price) && ad.price > 1000 ? ad.price : null
+  const price = Number.isFinite(ad.price) && ad.price > 1000 ? ad.price : null
   const mileage_km = Number.isFinite(ad.kms) ? ad.kms : null
   const seats = Number.isFinite(ad.seats_count) ? ad.seats_count : null
 
@@ -82,7 +82,7 @@ function adToListing(ad) {
     make: 'Tesla',
     model,
     version,
-    price_eur,
+    price,
     year,
     mileage_km,
     fuel: mapFuel(ad.energy),

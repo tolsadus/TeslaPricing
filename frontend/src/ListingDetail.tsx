@@ -29,7 +29,7 @@ type Tooltip = { x: number; y: number; price: number; date: string } | null;
 
 function PriceChart({ points, emptyMessage }: { points: PricePoint[]; emptyMessage: string }) {
   const [tooltip, setTooltip] = useState<Tooltip>(null);
-  const valid = points.filter((p) => p.price_eur !== null) as { price_eur: number; recorded_at: string }[];
+  const valid = points.filter((p) => p.price !== null) as { price: number; recorded_at: string }[];
   if (valid.length === 0) {
     return <p className="state">{emptyMessage}</p>;
   }
@@ -41,7 +41,7 @@ function PriceChart({ points, emptyMessage }: { points: PricePoint[]; emptyMessa
   const PAD_T = 24;
   const PAD_B = 40;
 
-  const prices = valid.map((p) => p.price_eur);
+  const prices = valid.map((p) => p.price);
   const times = valid.map((p) => new Date(p.recorded_at).getTime());
   const minP = Math.min(...prices);
   const maxP = Math.max(...prices);
@@ -54,8 +54,8 @@ function PriceChart({ points, emptyMessage }: { points: PricePoint[]; emptyMessa
   const plotted: ChartPoint[] = valid.map((p) => {
     const t = new Date(p.recorded_at).getTime();
     const x = PAD_L + ((t - minT) / timeRange) * (W - PAD_L - PAD_R);
-    const y = PAD_T + (1 - (p.price_eur - minP) / priceRange) * (H - PAD_T - PAD_B);
-    return { x, y, price: p.price_eur, date: p.recorded_at };
+    const y = PAD_T + (1 - (p.price - minP) / priceRange) * (H - PAD_T - PAD_B);
+    return { x, y, price: p.price, date: p.recorded_at };
   });
 
   if (plotted.length === 1) {
@@ -217,7 +217,7 @@ export default function ListingDetail({ id, isSaved, onToggle }: { id: number; i
   if (error) return <p className="state error">Error: {error}</p>;
   if (!listing) return <span className="spinner" />;
 
-  const prices = history.map((h) => h.price_eur).filter((p): p is number => p !== null);
+  const prices = history.map((h) => h.price).filter((p): p is number => p !== null);
   const last = prices[prices.length - 1];
   const maxPrice = prices.length > 0 ? Math.max(...prices) : null;
   const delta = last !== undefined && maxPrice !== null && maxPrice !== last ? last - maxPrice : null;
@@ -237,7 +237,7 @@ export default function ListingDetail({ id, isSaved, onToggle }: { id: number; i
             {(() => { const dt = (listing.drivetrain as keyof typeof DRIVETRAIN_LABEL | null) ?? getDrivetrain(listing); return dt ? <span className={`drivetrain-badge dt-${dt.toLowerCase()}`}>{DRIVETRAIN_LABEL[dt] ?? dt}</span> : null; })()}
             {listing.autopilot && <span className={`autopilot-badge ap-${listing.autopilot.toLowerCase()}`}>{listing.autopilot}</span>}
           </div>
-          <p className="detail-price">{formatPrice(listing.price_eur)}</p>
+          <p className="detail-price">{formatPrice(listing.price)}</p>
           <div className="detail-specs">
             {listing.year && <div className="spec-item"><span className="spec-label">{t("spec_year")}</span><span className="spec-value">{listing.year}</span></div>}
             {listing.mileage_km != null && <div className="spec-item"><span className="spec-label">{t("spec_mileage")}</span><span className="spec-value">{listing.mileage_km <= 100 ? t("spec_new") : formatKm(listing.mileage_km)}</span></div>}

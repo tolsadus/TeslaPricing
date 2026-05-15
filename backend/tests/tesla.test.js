@@ -2,7 +2,7 @@
 
 const { test } = require('node:test')
 const assert = require('node:assert/strict')
-const { parseItem } = require('../scraper/tesla')
+const { parseItem, MARKETS } = require('../scraper/tesla')
 
 test('parseItem: parses a full Tesla Model 3 inventory item', () => {
   const item = {
@@ -16,7 +16,7 @@ test('parseItem: parses a full Tesla Model 3 inventory item', () => {
     VehiclePhotos: [{ imageUrl: 'https://tesla.com/a.jpg' }, { imageUrl: 'https://tesla.com/b.jpg' }],
   }
 
-  const listing = parseItem(item, 'm3', 'used')
+  const listing = parseItem(item, 'm3', 'used', MARKETS.fr)
 
   assert.equal(listing.source, 'tesla')
   assert.equal(listing.external_id, '5YJ3E1EA7KF000123')
@@ -24,7 +24,7 @@ test('parseItem: parses a full Tesla Model 3 inventory item', () => {
   assert.equal(listing.make, 'Tesla')
   assert.equal(listing.model, 'Model 3')
   assert.equal(listing.version, 'Long Range AWD')
-  assert.equal(listing.price_eur, 42990)
+  assert.equal(listing.price, 42990)
   assert.equal(listing.year, 2023)
   assert.equal(listing.mileage_km, 15000)
   assert.equal(listing.fuel, 'Électrique')
@@ -40,13 +40,13 @@ test('parseItem: returns null for missing VIN', () => {
 })
 
 test('parseItem: mileage_km=0 for new vehicles without odometer', () => {
-  const listing = parseItem({ VIN: 'X', Price: 50000 }, 'my', 'new')
+  const listing = parseItem({ VIN: 'X', Price: 50000 }, 'my', 'new', MARKETS.fr)
   assert.equal(listing.mileage_km, 0)
 })
 
 test('parseItem: falls back to Price then PurchasePrice', () => {
-  const a = parseItem({ VIN: 'A', Price: 40000 }, 'm3', 'new')
-  const b = parseItem({ VIN: 'B', PurchasePrice: 30000 }, 'm3', 'new')
-  assert.equal(a.price_eur, 40000)
-  assert.equal(b.price_eur, 30000)
+  const a = parseItem({ VIN: 'A', Price: 40000 }, 'm3', 'new', MARKETS.fr)
+  const b = parseItem({ VIN: 'B', PurchasePrice: 30000 }, 'm3', 'new', MARKETS.fr)
+  assert.equal(a.price, 40000)
+  assert.equal(b.price, 30000)
 })

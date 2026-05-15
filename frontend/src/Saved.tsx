@@ -93,7 +93,7 @@ export default function Saved({ saved, toggle, isComparing, toggleCompare, compa
                   {listing.autopilot && <span className={`autopilot-badge ap-${listing.autopilot.toLowerCase()}`}>{listing.autopilot}</span>}
                 </div>
                 <div className="price-row">
-                  <p className="price">{formatPrice(listing.price_eur)}</p>
+                  <p className="price">{formatPrice(listing.price)}</p>
                   {listing.price_delta !== null && listing.price_delta > 0 && listing.max_price !== null && (
                     <span className="price-delta delta-down"><s>{formatPrice(listing.max_price)}</s></span>
                   )}

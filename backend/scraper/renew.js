@@ -54,7 +54,7 @@ function vehicleToListing(v) {
   const year = v.modelYear || (v.lastRegistrationDate ? parseInt(v.lastRegistrationDate.slice(0, 4), 10) : null)
   const mileage_km = typeof v.mileage === 'number' ? v.mileage : null
 
-  const price_eur = v.prices?.[0]?.priceWithTaxes ?? null
+  const price = v.prices?.[0]?.priceWithTaxes ?? null
 
   const locality = v.dealer?.address?.locality || null
   const dealerName = v.dealer?.name || null
@@ -76,7 +76,7 @@ function vehicleToListing(v) {
     make,
     model,
     version,
-    price_eur: price_eur && price_eur > 1000 ? price_eur : null,
+    price: price && price > 1000 ? price : null,
     year,
     mileage_km,
     fuel,

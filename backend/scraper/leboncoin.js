@@ -61,10 +61,10 @@ function adToListing(ad) {
   const title = (ad.subject || '').trim()
   const attrs = ad.attributes || []
 
-  let price_eur = null
-  if (Array.isArray(ad.price)) price_eur = ad.price[0] ?? null
-  else price_eur = ad.price ?? null
-  price_eur = parseIntSafe(price_eur)
+  let price = null
+  if (Array.isArray(ad.price)) price = ad.price[0] ?? null
+  else price = ad.price ?? null
+  price = parseIntSafe(price)
 
   const make = getAttr(attrs, 'brand')
   const model = getAttr(attrs, 'model')
@@ -92,7 +92,7 @@ function adToListing(ad) {
     make: make ? make.toLowerCase().replace(/\b\w/g, c => c.toUpperCase()) : null,
     model: model ? model.toLowerCase().replace(/\b\w/g, c => c.toUpperCase()) : null,
     version: null,
-    price_eur,
+    price,
     year,
     mileage_km,
     fuel,

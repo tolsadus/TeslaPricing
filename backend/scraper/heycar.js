@@ -35,7 +35,7 @@ function parseRsc(text) {
       make:        'Tesla',
       model,
       version:     item.variant || null,
-      price_eur:   typeof item.price === 'number' ? item.price : null,
+      price:   typeof item.price === 'number' ? item.price : null,
       year:        item.year ?? null,
       mileage_km:  typeof item.mileage === 'number' ? item.mileage : null,
       fuel:        'Électrique',

@@ -59,7 +59,7 @@ function parseListings(html) {
       const mileage_km = kmMatch ? parseInt(kmMatch[1].replace(/\s/g, ''), 10) : null
 
       const priceMatch = text.match(/(?:Mise\s+[àa]\s+prix|Ench[eè]re\s+courante)\s*:?\s*(\d[\d\s]*)\s*(?:€|&euro;)/i)
-      const price_eur = priceMatch ? parseInt(priceMatch[1].replace(/\s/g, ''), 10) : null
+      const price = priceMatch ? parseInt(priceMatch[1].replace(/\s/g, ''), 10) : null
 
       const locationMatch = card.match(/title="Lieu de stockage"[^>]*>[\s\S]*?<strong>[\s\S]*?<\/i>\s*([^<]+?)<\/strong>/i)
       const location = locationMatch ? locationMatch[1].trim() : null
@@ -83,7 +83,7 @@ function parseListings(html) {
         make:        'Tesla',
         model,
         version,
-        price_eur:   price_eur && price_eur > 1000 ? price_eur : null,
+        price:   price && price > 1000 ? price : null,
         year,
         mileage_km,
         fuel:        'Électrique',

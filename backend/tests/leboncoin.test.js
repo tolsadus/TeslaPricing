@@ -29,7 +29,7 @@ test('adToListing: parses a full Leboncoin ad', () => {
   assert.equal(listing.title, 'Tesla Model 3 Long Range')
   assert.equal(listing.make, 'Tesla')
   assert.equal(listing.model, 'Model 3')
-  assert.equal(listing.price_eur, 35000)
+  assert.equal(listing.price, 35000)
   assert.equal(listing.year, 2021)
   assert.equal(listing.mileage_km, 50000)
   assert.equal(listing.fuel, 'Électrique')

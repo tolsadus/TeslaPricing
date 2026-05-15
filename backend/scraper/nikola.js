@@ -81,7 +81,7 @@ function parseCard(html, soldClass = false) {
   const mileage_km = milageMatch ? parseMileage(stripTags(milageMatch[1])) : null
 
   const priceMatch = html.match(/<b>([^<]*€[^<]*)<\/b>/)
-  const price_eur = priceMatch ? parsePrice(priceMatch[1]) : null
+  const price = priceMatch ? parsePrice(priceMatch[1]) : null
 
   const tagMatch = html.match(/<span class="tag">([\s\S]*?)<\/span>/)
   const tag = tagMatch ? stripTags(tagMatch[1]) : null
@@ -94,7 +94,7 @@ function parseCard(html, soldClass = false) {
     make: 'Tesla',
     model,
     version,
-    price_eur,
+    price,
     year,
     mileage_km,
     fuel: null,

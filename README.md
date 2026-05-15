@@ -24,7 +24,7 @@ Aggregated Tesla used-car listings scraped from multiple French marketplaces. Re
 
 | Source | Command | Method |
 |---|---|---|
-| [Tesla FR](https://www.tesla.com/fr_FR/inventory) | `tesla` | `tesla-inventory` npm package — new & used inventory |
+| [Tesla](https://www.tesla.com/inventory) | `tesla` | `tesla-inventory` npm package — new & used inventory across 25 European markets (see `--markets` flag) |
 | [CapCar](https://www.capcar.fr) | `capcar` | Algolia API (no browser needed) |
 | [Leboncoin](https://www.leboncoin.fr) | `leboncoin` | Playwright — intercepts internal JSON API (Datadome protected) |
 | [GMECars](https://www.gmecars.fr) | `gmecars` | HTTP + HTML regex parsing |
@@ -89,8 +89,9 @@ Frontend runs on `http://localhost:5173`.
 
 | Command | Description |
 |---|---|
-| `./scrape.sh tesla` | Fetch all Tesla models (new + used) |
+| `./scrape.sh tesla` | Fetch all Tesla models (new + used) — France only by default |
 | `./scrape.sh tesla --models m3,my` | Specific models only |
+| `./scrape.sh tesla --markets fr,es,be` | Specific markets — supported keys: `at, be, ch, cz, de, dk, es, fi, fr, gb, gr, hr, hu, ie, is, it, lu, nl, no, pl, pt, ro, se, si, tr`. Tesla also serves **EE, LT, SK** but the `tesla-inventory` library has no entry for them, so they're not yet scrapable. |
 | `./scrape.sh capcar` | Scrape CapCar via Algolia (up to 10 pages) |
 | `./scrape.sh leboncoin` | Scrape Leboncoin (1 page, Playwright) |
 | `./scrape.sh leboncoin --headed` | Open browser window — required on first run to solve captcha |

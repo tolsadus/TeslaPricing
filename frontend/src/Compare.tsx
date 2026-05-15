@@ -21,13 +21,13 @@ function formatDate(iso: string): string {
 
 // Minimal sparkline for price history
 function Sparkline({ points, color }: { points: PricePoint[]; color: string }) {
-  const valid = points.filter((p): p is { price_eur: number; recorded_at: string } => p.price_eur !== null);
+  const valid = points.filter((p): p is { price: number; recorded_at: string } => p.price !== null);
   if (valid.length === 0) return <span className="cmp-no-data">—</span>;
 
   const W = 160;
   const H = 48;
   const PAD = 4;
-  const prices = valid.map((p) => p.price_eur);
+  const prices = valid.map((p) => p.price);
   const times = valid.map((p) => new Date(p.recorded_at).getTime());
   const minP = Math.min(...prices);
   const maxP = Math.max(...prices);
@@ -38,7 +38,7 @@ function Sparkline({ points, color }: { points: PricePoint[]; color: string }) {
 
   const pts = valid.map((p) => {
     const x = PAD + ((new Date(p.recorded_at).getTime() - minT) / tRange) * (W - PAD * 2);
-    const y = PAD + (1 - (p.price_eur - minP) / pRange) * (H - PAD * 2);
+    const y = PAD + (1 - (p.price - minP) / pRange) * (H - PAD * 2);
     return `${x.toFixed(1)},${y.toFixed(1)}`;
   });
 
@@ -103,7 +103,7 @@ type SpecRow = {
 
 function buildSpecs(cols: ColData[], t: (k: any) => string, lang: string): SpecRow[] {
   return [
-    { label: t("compare_spec_price"),      values: cols.map((c) => formatPrice(c.listing.price_eur)) },
+    { label: t("compare_spec_price"),      values: cols.map((c) => formatPrice(c.listing.price)) },
     { label: t("compare_spec_model"),      values: cols.map((c) => [c.listing.make, c.listing.model, c.listing.version].filter(Boolean).join(" ") || null) },
     { label: t("compare_spec_year"),       values: cols.map((c) => c.listing.year != null ? String(c.listing.year) : null) },
     { label: t("compare_spec_mileage"),    values: cols.map((c) => c.listing.mileage_km != null ? formatKm(c.listing.mileage_km, t("spec_new")) : null) },
@@ -181,7 +181,7 @@ export default function Compare({ ids, onRemove, onClear }: { ids: number[]; onR
                       <div className="cmp-header-accent" style={{ background: color }} />
                       <PhotoCell photos={col.photos} fallback={col.listing.image_url} alt={col.listing.title ?? t("photo_alt")} />
                       <p className="cmp-header-title">{col.listing.title}</p>
-                      <p className="cmp-header-price">{formatPrice(col.listing.price_eur)}</p>
+                      <p className="cmp-header-price">{formatPrice(col.listing.price)}</p>
                       <div className="cmp-header-actions">
                         <a className="btn btn-primary btn-sm" href={col.listing.url} target="_blank" rel="noreferrer">{t("compare_open")}</a>
                         <button className="btn btn-secondary btn-sm" onClick={() => onRemove(col.listing.id)}>{t("compare_remove")}</button>

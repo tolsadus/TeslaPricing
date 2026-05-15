@@ -97,7 +97,7 @@ export default function Dropped({ isSaved, toggle, isComparing, toggleCompare, c
                 <h3 className="dropped-name">{d.title}</h3>
                 {dt && <span className={`drivetrain-badge dt-${dt.toLowerCase()}`}>{DRIVETRAIN_LABEL[dt] ?? dt}</span>}
                 <div className="dropped-prices">
-                  <span className="dropped-new-price">{formatPrice(d.price_eur)}</span>
+                  <span className="dropped-new-price">{formatPrice(d.price)}</span>
                   <span className="dropped-old-price"><s>{formatPrice(d.old_price)}</s></span>
                 </div>
                 <p className="meta">{d.year ?? "—"} · {formatKm(d.mileage_km)} · {d.fuel ?? "—"}</p>

@@ -6,7 +6,7 @@ export type Listing = {
   make: string | null;
   model: string | null;
   version: string | null;
-  price_eur: number | null;
+  price: number | null;
   year: number | null;
   mileage_km: number | null;
   fuel: string | null;
@@ -46,7 +46,7 @@ export type DroppedListing = {
   model: string | null;
   version: string | null;
   drivetrain: string | null;
-  price_eur: number | null;
+  price: number | null;
   old_price: number;
   drop_amount: number;
   drop_pct: number;
@@ -60,7 +60,7 @@ export type DroppedListing = {
 };
 
 export type PricePoint = {
-  price_eur: number | null;
+  price: number | null;
   recorded_at: string;
 };
 

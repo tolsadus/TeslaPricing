@@ -95,7 +95,7 @@ export default function Auctions() {
                     </div>
                     <div className="auction-card-price">
                       <p className="auction-price">
-                        {formatPrice(listing.price_eur, t("auctions_tba"), locale)}
+                        {formatPrice(listing.price, t("auctions_tba"), locale)}
                       </p>
                       <a className="btn btn-primary btn-sm" href={listing.url} target="_blank" rel="noreferrer">
                         {t("auctions_view")}
