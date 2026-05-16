@@ -20,7 +20,7 @@ import { useCompare } from "./useCompare";
 import { useAuth } from "./useAuth";
 import { useTranslation } from "./i18n";
 import type { Listing, ListingFilters } from "./types";
-import { getDrivetrain, DRIVETRAIN_LABEL, formatFuel, getCountry } from "./utils";
+import { getDrivetrain, DRIVETRAIN_LABEL, formatFuel, getCountry, getCountryByCode } from "./utils";
 
 const SHOW_ADS = false;
 
@@ -402,7 +402,7 @@ export default function App() {
                       <div className="card-badges">
                         {(() => { const dt = (listing.drivetrain as keyof typeof DRIVETRAIN_LABEL | null) ?? getDrivetrain(listing); return dt ? <span className={`drivetrain-badge dt-${dt.toLowerCase()}${filters.drivetrain === dt ? " badge-active" : " badge-clickable"}`} onClick={() => setFilters((f) => ({ ...f, drivetrain: f.drivetrain === dt ? undefined : dt }))}>{DRIVETRAIN_LABEL[dt] ?? dt}</span> : null; })()}
                         {listing.autopilot && <span className={`autopilot-badge ap-${listing.autopilot.toLowerCase()}${filters.autopilot === listing.autopilot ? " badge-active" : " badge-clickable"}`} onClick={() => setFilters((f) => ({ ...f, autopilot: f.autopilot === listing.autopilot ? undefined : listing.autopilot! }))}>{listing.autopilot}</span>}
-                        {(() => { const c = getCountry(listing.source); return c ? <span className={`country-badge country-${c.code.toLowerCase()}`} title={c.name}>{c.flag} {c.code}</span> : null; })()}
+                        {(() => { const c = getCountryByCode(listing.market) ?? getCountry(listing.source); return c ? <span className={`country-badge country-${c.code.toLowerCase()}`} title={c.name}>{c.flag} {c.code}</span> : null; })()}
                         {listing.is_sold && <span className="sold-badge">{t("badge_sold")}</span>}
                         {listing.auction_date && <a className="auction-badge badge-clickable" href="#/auctions">🔨 Auction</a>}
                       </div>

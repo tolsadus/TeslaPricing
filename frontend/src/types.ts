@@ -11,6 +11,8 @@ export type Listing = {
   mileage_km: number | null;
   fuel: string | null;
   gearbox: string | null;
+  market: string | null;
+  currency: string | null;
   location: string | null;
   url: string;
   image_url: string | null;

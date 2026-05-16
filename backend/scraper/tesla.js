@@ -9,9 +9,13 @@ const CABIN_SEATS = { FIVE: 5, SEVEN: 7, SIX: 6, FOUR: 4 }
 
 // market key (CLI alias) -> { inventory key for tesla-inventory lib, language, market code, currency }
 const MARKETS = {
+  ae: { inventory: 'ae', language: 'en', market: 'AE', currency: 'AED' },
   at: { inventory: 'at', language: 'de', market: 'AT', currency: 'EUR' },
+  au: { inventory: 'au', language: 'en', market: 'AU', currency: 'AUD' },
   be: { inventory: 'be', language: 'nl', market: 'BE', currency: 'EUR' },
+  ca: { inventory: 'ca', language: 'en', market: 'CA', currency: 'CAD' },
   ch: { inventory: 'ch', language: 'de', market: 'CH', currency: 'CHF' },
+  cn: { inventory: 'cn', language: 'zh', market: 'CN', currency: 'CNY' },
   cz: { inventory: 'cz', language: 'cs', market: 'CZ', currency: 'CZK' },
   de: { inventory: 'de', language: 'de', market: 'DE', currency: 'EUR' },
   dk: { inventory: 'dk', language: 'da', market: 'DK', currency: 'DKK' },
@@ -20,20 +24,34 @@ const MARKETS = {
   fr: { inventory: 'fr', language: 'fr', market: 'FR', currency: 'EUR' },
   gb: { inventory: 'gb', language: 'en', market: 'GB', currency: 'GBP' },
   gr: { inventory: 'gr', language: 'el', market: 'GR', currency: 'EUR' },
+  hk: { inventory: 'hk', language: 'en', market: 'HK', currency: 'HKD' },
   hr: { inventory: 'hr', language: 'hr', market: 'HR', currency: 'EUR' },
   hu: { inventory: 'hu', language: 'hu', market: 'HU', currency: 'HUF' },
   ie: { inventory: 'ie', language: 'en', market: 'IE', currency: 'EUR' },
+  il: { inventory: 'il', language: 'he', market: 'IL', currency: 'ILS' },
   is: { inventory: 'is', language: 'is', market: 'IS', currency: 'ISK' },
   it: { inventory: 'it', language: 'it', market: 'IT', currency: 'EUR' },
+  jo: { inventory: 'jo', language: 'en', market: 'JO', currency: 'JOD' },
+  jp: { inventory: 'jp', language: 'ja', market: 'JP', currency: 'JPY' },
+  kr: { inventory: 'kr', language: 'ko', market: 'KR', currency: 'KRW' },
   lu: { inventory: 'lu', language: 'fr', market: 'LU', currency: 'EUR' },
+  mo: { inventory: 'mo', language: 'en', market: 'MO', currency: 'MOP' },
+  mx: { inventory: 'mx', language: 'es', market: 'MX', currency: 'MXN' },
+  my: { inventory: 'my', language: 'en', market: 'MY', currency: 'MYR' },
   nl: { inventory: 'nl', language: 'nl', market: 'NL', currency: 'EUR' },
   no: { inventory: 'no', language: 'no', market: 'NO', currency: 'NOK' },
+  nz: { inventory: 'nz', language: 'en', market: 'NZ', currency: 'NZD' },
   pl: { inventory: 'pl', language: 'pl', market: 'PL', currency: 'PLN' },
+  pr: { inventory: 'pr', language: 'es', market: 'PR', currency: 'USD' },
   pt: { inventory: 'pt', language: 'pt', market: 'PT', currency: 'EUR' },
   ro: { inventory: 'ro', language: 'ro', market: 'RO', currency: 'RON' },
   se: { inventory: 'se', language: 'sv', market: 'SE', currency: 'SEK' },
+  sg: { inventory: 'sg', language: 'en', market: 'SG', currency: 'SGD' },
   si: { inventory: 'si', language: 'sl', market: 'SI', currency: 'EUR' },
+  th: { inventory: 'th', language: 'th', market: 'TH', currency: 'THB' },
   tr: { inventory: 'tr', language: 'tr', market: 'TR', currency: 'TRY' },
+  tw: { inventory: 'tw', language: 'zh', market: 'TW', currency: 'TWD' },
+  us: { inventory: 'us', language: 'en', market: 'US', currency: 'USD' },
 }
 
 const fetcher = url => fetch(url).then(res => res.text())
@@ -48,8 +66,9 @@ function compositorImage(model, optionCodeList) {
   return `https://static-assets.tesla.com/configurator/compositor?${params}`
 }
 
-function listingUrl(locale, model, vin, condition) {
-  return `https://www.tesla.com/${locale}/${model}/order/${vin}?titleStatus=${condition}&referral=maxime716843`
+function listingUrl(locale, model, vin, condition, marketKey) {
+  const domain = marketKey === 'cn' ? 'cn' : 'com'
+  return `https://www.tesla.${domain}/${locale}/${model}/order/${vin}?titleStatus=${condition}&referral=maxime716843`
 }
 
 function parseItem(item, model, condition, marketCfg) {
@@ -104,7 +123,7 @@ function parseItem(item, model, condition, marketCfg) {
     country: marketCfg.market,
     market: marketCfg.market,
     currency: marketCfg.currency,
-    url: listingUrl(`${marketCfg.language}_${marketCfg.market}`, model, vin, condition),
+    url: listingUrl(`${marketCfg.language}_${marketCfg.market}`, model, vin, condition, marketCfg.inventory),
     image_url: compositorImage(model, item.OptionCodeList ?? null),
     _photos: (item.VehiclePhotos || []).map(p => p.imageUrl).filter(Boolean),
   }

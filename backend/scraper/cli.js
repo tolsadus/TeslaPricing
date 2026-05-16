@@ -90,12 +90,12 @@ program
   .command('tesla')
   .description('Scrape Tesla inventory')
   .option('--models <list>', 'comma-separated models (m3,my,ms,mx)', 'm3,my,ms,mx')
-  .option('--markets <list>', 'comma-separated markets (fr,es,be,de,it,nl,pt,at,ch,cz,dk,fi,gb,gr,hr,hu,ie,is,lu,no,pl,ro,se,si,tr)', 'fr')
+  .option('--markets <list>', 'comma-separated markets, or "all" for every supported market', 'fr')
   .option('--concurrency <n>', 'markets to scrape in parallel', v => parseInt(v, 10), 5)
   .action(async ({ models, markets, concurrency }) => {
-    const { scrape, CONDITIONS, flagEmoji } = require('./tesla')
+    const { scrape, CONDITIONS, flagEmoji, MARKETS } = require('./tesla')
     const modelList = models.split(',')
-    const marketList = markets.split(',')
+    const marketList = markets === 'all' ? Object.keys(MARKETS) : markets.split(',')
     const stepsPerMarket = modelList.length * CONDITIONS.length
     const total = { count: 0 }
     const runStart = new Date().toISOString()

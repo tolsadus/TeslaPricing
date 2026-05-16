@@ -46,7 +46,10 @@
       catch (e) { log('inventory fetch threw', e); break; }
       if (!res.ok) { log('inventory API status', res.status); break; }
       const data = await res.json();
-      const results = data.results || [];
+      const raw = data.results;
+      const results = Array.isArray(raw)
+        ? raw
+        : (raw && typeof raw === 'object' ? Object.values(raw).filter(Array.isArray).flat() : []);
       for (const r of results) if (r.VIN && !seen.has(r.VIN)) { seen.add(r.VIN); acc.push(r); }
       const total = Number(data.total_matches_found) || 0;
       offset += results.length;
@@ -126,7 +129,7 @@
     }).format(Math.round(n));
   };
   const fmtSignedMoney = n => (n > 0 ? '+' : '') + fmtMoney(n);
-  const fmtDate = iso => new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
+  const fmtDate = iso => new Date(iso).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
   const daysSince = iso => Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86400000));
 
   function makeBadge(vin, data) {
