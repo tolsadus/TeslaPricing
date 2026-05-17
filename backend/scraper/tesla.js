@@ -170,14 +170,18 @@ async function scrapeMarket(marketKey, models, onPage, all, onProgress, slot) {
         let n = listings.length
         if (onPage && listings.length > 0) n = await onPage(listings)
         count += n
-        byModel[model] = (byModel[model] || 0) + n
+        if (!byModel[model]) byModel[model] = { new: 0, used: 0 }
+        byModel[model][condition] += n
         report(`${model}/${condition} +${listings.length}`)
       } catch (err) {
         report(`${model}/${condition} ✗ ${err.message}`)
       }
     }
   }
-  const summary = models.map(m => `${m}:${byModel[m] || 0}`).join(' ')
+  const summary = models.map(m => {
+    const b = byModel[m] || { new: 0, used: 0 }
+    return `${m}:${b.new}n/${b.used}u`
+  }).join(' ')
   report(`done · ${summary}`)
 }
 
