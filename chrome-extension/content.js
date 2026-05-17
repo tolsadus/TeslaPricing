@@ -7,9 +7,7 @@
   const log = (...args) => console.log('[TPH]', ...args);
 
   const VIN_RE = /[A-HJ-NPR-Z0-9]{17}/;
-  const RESULTS_BY_VIN = new Map();          // VIN -> full API result
   const HISTORY_BY_VIN = new Map();          // VIN -> { current_price, history, ... }
-  const KEY_TO_VIN = new Map();              // "price_mileage_year" -> VIN (only if unique)
 
   function detectModel() {
     const m = location.pathname.match(/\/inventory\/used\/(m[3sxy])/i);
@@ -18,20 +16,11 @@
 
   function detectLocale() {
     const m = location.pathname.match(/^\/([a-z]{2})_([A-Z]{2})\//);
-    return m ? { language: m[1], market: m[2] } : { language: 'fr', market: 'FR' };
-  }
-
-  function parseCardKey(text) {
-    const priceM = text.match(/(\d[\d   ]*)\s*€/);
-    const kmM = text.match(/(\d[\d   ]*)\s*km/);
-    const yearM = text.match(/\bde\s+(\d{4})\b/) || text.match(/\b(20\d{2})\b/);
-    if (!priceM || !kmM || !yearM) return null;
-    const clean = s => parseInt(s.replace(/[\s  ]/g, ''), 10);
-    const price = clean(priceM[1]);
-    const km = clean(kmM[1]);
-    const year = parseInt(yearM[1], 10);
-    if (!price || !km || !year) return null;
-    return `${price}_${km}_${year}`;
+    if (m) return { language: m[1], market: m[2] };
+    // No locale prefix: tesla.cn is the China site, unprefixed tesla.com is the US.
+    return location.hostname.endsWith('.cn')
+      ? { language: 'zh', market: 'CN' }
+      : { language: 'en', market: 'US' };
   }
 
   async function fetchAllResults(model, language, market) {
@@ -40,7 +29,7 @@
     let offset = 0;
     for (let i = 0; i < 20; i++) {
       const q = { query: { model, condition: 'used', market, language }, offset, count: 50 };
-      const url = `https://www.tesla.com/inventory/api/v4/inventory-results?query=${encodeURIComponent(JSON.stringify(q))}`;
+      const url = `${location.origin}/inventory/api/v4/inventory-results?query=${encodeURIComponent(JSON.stringify(q))}`;
       let res;
       try { res = await fetch(url); }
       catch (e) { log('inventory fetch threw', e); break; }
@@ -81,44 +70,47 @@
     return out;
   }
 
-  function indexResults(results) {
-    const tally = new Map();
-    for (const r of results) {
-      if (!r.VIN) continue;
-      RESULTS_BY_VIN.set(r.VIN, r);
-      const price = r.InventoryPrice ?? r.Price ?? r.PurchasePrice;
-      const km = r.Odometer;
-      const year = r.Year;
-      if (price != null && km != null && year != null) {
-        const key = `${Math.round(price)}_${Math.round(km)}_${year}`;
-        const prev = tally.get(key);
-        tally.set(key, prev ? [...prev, r.VIN] : [r.VIN]);
-      }
-    }
-    let collisions = 0;
-    for (const [key, vins] of tally) {
-      if (vins.length === 1) KEY_TO_VIN.set(key, vins[0]);
-      else collisions += vins.length;
-    }
-    if (collisions > 0) log(`skipped ${collisions} VINs with ambiguous price/km/year fingerprint`);
-  }
-
   function vinForCard(card) {
-    const els = card.querySelectorAll('[src], [href]');
-    for (const el of els) {
-      const haystack = (el.getAttribute('src') || '') + ' ' + (el.getAttribute('href') || '');
-      const m = haystack.match(VIN_RE);
-      if (m && RESULTS_BY_VIN.has(m[0])) return m[0];
-    }
-    const key = parseCardKey(card.textContent || '');
-    if (!key) return null;
-    return KEY_TO_VIN.get(key) || null;
+    // Tesla tags each card's <article> with data-id="{VIN}-search-result-container".
+    const el = card.matches('[data-id]') ? card : card.querySelector('[data-id]');
+    const m = el && (el.getAttribute('data-id') || '').match(VIN_RE);
+    return m ? m[0] : null;
   }
 
   const CURRENCY_BY_MARKET = {
-    CH: 'CHF', CZ: 'CZK', DK: 'DKK', GB: 'GBP', HU: 'HUF',
+    CH: 'CHF', CN: 'CNY', CZ: 'CZK', DK: 'DKK', GB: 'GBP', HU: 'HUF',
     IS: 'ISK', NO: 'NOK', PL: 'PLN', RO: 'RON', SE: 'SEK', TR: 'TRY',
+    US: 'USD',
   };
+  // UI strings follow the user's browser language, falling back to English.
+  const I18N = {
+    en: { day: 'd', dateLocale: 'en-US', historyTitle: 'Price history',
+      seenFor: d => `Seen for ${d}d`, records: n => `${n} record${n > 1 ? 's' : ''}`,
+      noChange: 'no change', total: s => `${s} total`, footer: 'Data via TeslaPricing' },
+    fr: { day: 'j', dateLocale: 'fr-FR', historyTitle: 'Historique de prix',
+      seenFor: d => `Vu depuis ${d}j`, records: n => `${n} relevé${n > 1 ? 's' : ''}`,
+      noChange: 'aucun changement', total: s => `${s} au total`, footer: 'Données via TeslaPricing' },
+    de: { day: 'T', dateLocale: 'de-DE', historyTitle: 'Preisverlauf',
+      seenFor: d => `Seit ${d} T`, records: n => `${n} Eintr${n > 1 ? 'äge' : 'ag'}`,
+      noChange: 'keine Änderung', total: s => `${s} gesamt`, footer: 'Daten via TeslaPricing' },
+    nl: { day: 'd', dateLocale: 'nl-NL', historyTitle: 'Prijsgeschiedenis',
+      seenFor: d => `Sinds ${d}d`, records: n => `${n} meting${n > 1 ? 'en' : ''}`,
+      noChange: 'geen wijziging', total: s => `${s} totaal`, footer: 'Gegevens via TeslaPricing' },
+    it: { day: 'g', dateLocale: 'it-IT', historyTitle: 'Storico prezzi',
+      seenFor: d => `Visto da ${d}g`, records: n => `${n} rilevazion${n > 1 ? 'i' : 'e'}`,
+      noChange: 'nessuna variazione', total: s => `${s} in totale`, footer: 'Dati via TeslaPricing' },
+    es: { day: 'd', dateLocale: 'es-ES', historyTitle: 'Historial de precios',
+      seenFor: d => `Visto hace ${d}d`, records: n => `${n} registro${n > 1 ? 's' : ''}`,
+      noChange: 'sin cambios', total: s => `${s} en total`, footer: 'Datos vía TeslaPricing' },
+    no: { day: 'd', dateLocale: 'nb-NO', historyTitle: 'Prishistorikk',
+      seenFor: d => `Sett i ${d}d`, records: n => `${n} registrering${n > 1 ? 'er' : ''}`,
+      noChange: 'ingen endring', total: s => `${s} totalt`, footer: 'Data via TeslaPricing' },
+    sv: { day: 'd', dateLocale: 'sv-SE', historyTitle: 'Prishistorik',
+      seenFor: d => `Sedd i ${d}d`, records: n => `${n} notering${n > 1 ? 'ar' : ''}`,
+      noChange: 'ingen ändring', total: s => `${s} totalt`, footer: 'Data via TeslaPricing' },
+  };
+  const L = I18N[(navigator.language || 'en').slice(0, 2).toLowerCase()] || I18N.en;
+
   const fmtMoney = n => {
     if (n == null) return '—';
     const loc = detectLocale();
@@ -129,7 +121,7 @@
     }).format(Math.round(n));
   };
   const fmtSignedMoney = n => (n > 0 ? '+' : '') + fmtMoney(n);
-  const fmtDate = iso => new Date(iso).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+  const fmtDate = iso => new Date(iso).toLocaleString(L.dateLocale, { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
   const daysSince = iso => Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86400000));
 
   function makeBadge(vin, data) {
@@ -144,13 +136,14 @@
 
     if (delta < 0) {
       badge.classList.add('tph-down');
-      badge.textContent = `▼ ${fmtSignedMoney(delta)} · ${days}j`;
+      badge.textContent = `▼ ${fmtSignedMoney(delta)} · ${days}${L.day}`;
     } else if (delta > 0) {
       badge.classList.add('tph-up');
-      badge.textContent = `▲ ${fmtSignedMoney(delta)} · ${days}j`;
+      badge.textContent = `▲ ${fmtSignedMoney(delta)} · ${days}${L.day}`;
     } else {
+      // Seen only once / no price movement — neutral grey marker.
       badge.classList.add('tph-flat');
-      badge.textContent = history.length > 1 ? `= ${days}j` : `vu ${days}j`;
+      badge.textContent = 'TPH';
     }
 
     return badge;
@@ -179,12 +172,12 @@
     const days = daysSince(data.first_seen_at);
 
     const head = document.createElement('h4');
-    head.textContent = `Historique de prix · ${vin.slice(-6)}`;
+    head.textContent = `${L.historyTitle} · ${vin.slice(-6)}`;
     el.appendChild(head);
 
     const sub = document.createElement('p');
     sub.className = 'tph-sub';
-    sub.textContent = `Vu depuis ${days}j · ${history.length} relevé${history.length > 1 ? 's' : ''} · ${totalDelta === 0 ? 'aucun changement' : `${fmtSignedMoney(totalDelta)} au total`}`;
+    sub.textContent = `${L.seenFor(days)} · ${L.records(history.length)} · ${totalDelta === 0 ? L.noChange : L.total(fmtSignedMoney(totalDelta))}`;
     el.appendChild(sub);
 
     let prev = null;
@@ -209,7 +202,7 @@
     footerLink.href = 'https://tolsadus.github.io/TeslaPricing/';
     footerLink.target = '_blank';
     footerLink.rel = 'noopener noreferrer';
-    footerLink.textContent = 'Données via TeslaPricing';
+    footerLink.textContent = L.footer;
     footer.appendChild(footerLink);
     el.appendChild(footer);
 
@@ -231,20 +224,30 @@
 
   function injectBadges() {
     if (HISTORY_BY_VIN.size === 0) return 0;
-    const hosts = document.querySelectorAll('section.card-info-details');
+    // article[data-id] and section.result-gallery exist on both tesla.com and tesla.cn.
+    const cards = document.querySelectorAll('article[data-id]');
 
     let matched = 0;
-    for (const host of hosts) {
-      if (host.querySelector('.tph-badge')) continue;
-      const card = host.closest('article.vehicle-card') || host.closest('article.result') || host.closest('article');
-      if (!card) continue;
+    for (const card of cards) {
+      if (card.querySelector('.tph-badge')) continue;
       const vin = vinForCard(card);
       if (!vin || !HISTORY_BY_VIN.has(vin)) continue;
 
-      const cs = getComputedStyle(host);
-      if (cs.position === 'static') host.style.position = 'relative';
       const badge = makeBadge(vin, HISTORY_BY_VIN.get(vin));
-      host.appendChild(badge);
+      const pricing = card.querySelector('div.result-pricing');
+      if (pricing) {
+        // China layout: sit in the pricing box, in normal flow below the price.
+        badge.classList.add('tph-inline');
+        pricing.appendChild(badge);
+      } else {
+        // EU/US layout: top-right of the info block (falls back to gallery/card).
+        const host = card.querySelector('section.card-info-details')
+                  || card.querySelector('section.result-gallery')
+                  || card;
+        const cs = getComputedStyle(host);
+        if (cs.position === 'static') host.style.position = 'relative';
+        host.appendChild(badge);
+      }
 
       let hoverTimer = null;
       badge.addEventListener('mouseenter', () => {
@@ -285,7 +288,6 @@
       log('no results — Tesla API may have changed or be region-gated');
       return;
     }
-    indexResults(results);
 
     const newVins = results.map(r => r.VIN).filter(v => v && !HISTORY_BY_VIN.has(v));
     if (newVins.length > 0) {
@@ -319,8 +321,6 @@
         lastPath = location.pathname;
         log('SPA navigation', lastPath);
         HISTORY_BY_VIN.clear();
-        RESULTS_BY_VIN.clear();
-        KEY_TO_VIN.clear();
         refresh();
       }
     }, 1000);

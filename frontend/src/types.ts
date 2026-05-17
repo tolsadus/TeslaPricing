@@ -66,7 +66,7 @@ export type PricePoint = {
   recorded_at: string;
 };
 
-export type SortBy = "scraped_at" | "mileage_km" | "year" | "price" | "price_delta" | "drop_pct";
+export type SortBy = "scraped_at" | "mileage_km" | "year" | "price" | "price_delta" | "drop_pct" | "market";
 export type SortDir = "asc" | "desc";
 
 export type TrendPoint = {

@@ -1,15 +1,27 @@
 {
   "manifest_version": 3,
   "name": "Tesla Price History",
-  "version": "0.1.0",
-  "description": "Show how each Tesla used-car listing has been repriced over time, directly on tesla.com.",
+  "version": "0.0.1",
+  "description": "Show how each Tesla used-car listing has been repriced over time, directly on tesla website.",
   "content_scripts": [
     {
       "matches": [
         "https://www.tesla.com/*/inventory/used/m3*",
         "https://www.tesla.com/*/inventory/used/my*",
         "https://www.tesla.com/*/inventory/used/ms*",
-        "https://www.tesla.com/*/inventory/used/mx*"
+        "https://www.tesla.com/*/inventory/used/mx*",
+        "https://www.tesla.com/inventory/used/m3*",
+        "https://www.tesla.com/inventory/used/my*",
+        "https://www.tesla.com/inventory/used/ms*",
+        "https://www.tesla.com/inventory/used/mx*",
+        "https://www.tesla.cn/*/inventory/used/m3*",
+        "https://www.tesla.cn/*/inventory/used/my*",
+        "https://www.tesla.cn/*/inventory/used/ms*",
+        "https://www.tesla.cn/*/inventory/used/mx*",
+        "https://www.tesla.cn/inventory/used/m3*",
+        "https://www.tesla.cn/inventory/used/my*",
+        "https://www.tesla.cn/inventory/used/ms*",
+        "https://www.tesla.cn/inventory/used/mx*"
       ],
       "js": ["content.js"],
       "css": ["overlay.css"],

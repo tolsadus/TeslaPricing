@@ -30,6 +30,12 @@
   background: #444c56;
 }
 
+/* China layout: rendered inside the pricing box, in normal flow below the price. */
+.tph-badge.tph-inline {
+  position: static;
+  margin-top: 8px;
+}
+
 .tph-badge:hover {
   filter: brightness(1.1);
 }

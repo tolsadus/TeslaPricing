@@ -130,10 +130,11 @@ function parseItem(item, model, condition, marketCfg) {
 }
 
 // Runs fn over items with at most `limit` in flight at once.
+// Each worker has a stable slot index, passed to fn as the second argument.
 async function runPool(items, limit, fn) {
   let cursor = 0
-  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
-    while (cursor < items.length) await fn(items[cursor++])
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async (_, slot) => {
+    while (cursor < items.length) await fn(items[cursor++], slot)
   })
   await Promise.all(workers)
 }
@@ -143,7 +144,7 @@ function flagEmoji(market) {
   return String.fromCodePoint(...[...market.toUpperCase()].map(c => 0x1f1e6 + c.charCodeAt(0) - 65))
 }
 
-async function scrapeMarket(marketKey, models, onPage, all, onProgress) {
+async function scrapeMarket(marketKey, models, onPage, all, onProgress, slot) {
   const cfg = MARKETS[marketKey]
   if (!cfg) {
     console.warn(`[tesla] unknown market "${marketKey}", skipping`)
@@ -153,8 +154,9 @@ async function scrapeMarket(marketKey, models, onPage, all, onProgress) {
   const totalSteps = models.length * CONDITIONS.length
   let step = 0
   let count = 0
+  const byModel = {}
   const report = label => {
-    if (onProgress) onProgress(marketKey, { market: cfg.market, flag, step, totalSteps, count, label })
+    if (onProgress) onProgress(marketKey, { slot, market: cfg.market, flag, step, totalSteps, count, label })
     else console.log(`${flag} ${cfg.market}  ${step}/${totalSteps}  ${label}`)
   }
   report('start')
@@ -165,20 +167,23 @@ async function scrapeMarket(marketKey, models, onPage, all, onProgress) {
         const results = await teslaInventory(cfg.inventory, { model, condition })
         const listings = results.map(item => parseItem(item, model, condition, cfg)).filter(Boolean)
         all.push(...listings)
-        count += listings.length
-        if (onPage && listings.length > 0) await onPage(listings)
+        let n = listings.length
+        if (onPage && listings.length > 0) n = await onPage(listings)
+        count += n
+        byModel[model] = (byModel[model] || 0) + n
         report(`${model}/${condition} +${listings.length}`)
       } catch (err) {
         report(`${model}/${condition} ✗ ${err.message}`)
       }
     }
   }
-  report(`done · ${count} listings`)
+  const summary = models.map(m => `${m}:${byModel[m] || 0}`).join(' ')
+  report(`done · ${summary}`)
 }
 
 async function scrape({ models = MODELS, markets = ['fr'], concurrency = 5, onPage, onProgress } = {}) {
   const all = []
-  await runPool(markets, concurrency, marketKey => scrapeMarket(marketKey, models, onPage, all, onProgress))
+  await runPool(markets, concurrency, (marketKey, slot) => scrapeMarket(marketKey, models, onPage, all, onProgress, slot))
   return all
 }
 

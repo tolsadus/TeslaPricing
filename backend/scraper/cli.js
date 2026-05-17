@@ -2,13 +2,54 @@
 'use strict'
 
 const { Command } = require('commander')
-const cliProgress = require('cli-progress')
 const { upsert, pool, refreshDelta, markRemovedByAge, getPastUnsoldAlcopa, markSold, getKnownSoldIds } = require('./db')
 const { geocode, countryFor } = require('./geocode')
 
 const PAGINATED_SOURCES = new Set(['leboncoin', 'lacentrale'])
 const STALE_DAYS_DEFAULT = 3
 const STALE_DAYS_PAGINATED = 7
+
+// Fixed-height progress display: one bar per worker slot (never more than the
+// terminal can hold), with finished items printed as permanent lines above.
+// Renders only via process.stdout.write — keep all console output buffered
+// elsewhere so nothing else touches the terminal while bars are live.
+function createSlotProgress(slotCount) {
+  const tty = process.stdout.isTTY
+  const BAR = 20
+  const slots = new Array(slotCount).fill(null)
+  let painted = false
+
+  const bar = (step, total) => {
+    const f = total > 0 ? Math.round((step / total) * BAR) : 0
+    return '█'.repeat(f) + '░'.repeat(BAR - f)
+  }
+  const line = s => s
+    ? ` ${s.flag} ${s.market.padEnd(3)} |${bar(s.step, s.total)}| ${s.step}/${s.total}  ${s.label}`
+    : ''
+  const draw = up => {
+    if (up) process.stdout.write(`\x1b[${slotCount}A`)
+    for (const s of slots) process.stdout.write('\x1b[2K' + line(s) + '\n')
+  }
+
+  return {
+    update(slot, state) {
+      slots[slot] = state
+      if (!tty) return
+      if (!painted) { painted = true; process.stdout.write('\x1b[?25l'); draw(false) }
+      else draw(true)
+    },
+    log(text) {
+      if (!tty || !painted) { process.stdout.write(text + '\n'); return }
+      process.stdout.write(`\x1b[${slotCount}A\x1b[2K` + text + '\n')
+      for (const s of slots) process.stdout.write('\x1b[2K' + line(s) + '\n')
+    },
+    stop() {
+      // Erase the transient bar block — every finished market is already a
+      // permanent line above it — and restore the cursor.
+      if (tty && painted) process.stdout.write(`\x1b[${slotCount}A\x1b[0J\x1b[?25h`)
+    },
+  }
+}
 
 async function markRemovedFor(source, _runStart, total) {
   try {
@@ -40,6 +81,7 @@ function makeOnPage(total, { quiet = false } = {}) {
     const n = await upsert(listings, { quiet })
     total.count += n
     if (!quiet) console.log(`  [db] upserted ${n} (total so far: ${total.count})`)
+    return n
   }
 }
 
@@ -93,39 +135,46 @@ program
   .option('--markets <list>', 'comma-separated markets, or "all" for every supported market', 'fr')
   .option('--concurrency <n>', 'markets to scrape in parallel', v => parseInt(v, 10), 5)
   .action(async ({ models, markets, concurrency }) => {
-    const { scrape, CONDITIONS, flagEmoji, MARKETS } = require('./tesla')
+    const { scrape, MARKETS } = require('./tesla')
     const modelList = models.split(',')
     const marketList = markets === 'all' ? Object.keys(MARKETS) : markets.split(',')
-    const stepsPerMarket = modelList.length * CONDITIONS.length
     const total = { count: 0 }
     const runStart = new Date().toISOString()
 
-    const multibar = new cliProgress.MultiBar({
-      format: ' {flag} {market} |{bar}| {value}/{total}  {label}',
-      barCompleteChar: '█',
-      barIncompleteChar: '░',
-      hideCursor: true,
-      clearOnComplete: false,
-      autopadding: true,
-    })
-    const bars = new Map()
-    for (const mk of marketList) {
-      bars.set(mk, multibar.create(stepsPerMarket, 0, {
-        flag: flagEmoji(mk), market: mk.toUpperCase(), label: 'waiting',
-      }))
+    const prog = createSlotProgress(Math.min(concurrency, marketList.length))
+
+    // The progress renderer owns the terminal — buffer all other console output
+    // during the scrape and replay it once the bars are stopped.
+    const buffered = []
+    const realConsole = { log: console.log, warn: console.warn, error: console.error }
+    console.log = (...a) => buffered.push(['log', a])
+    console.warn = (...a) => buffered.push(['warn', a])
+    console.error = (...a) => buffered.push(['error', a])
+
+    try {
+      await scrape({
+        models: modelList,
+        markets: marketList,
+        concurrency,
+        onPage: makeOnPage(total, { quiet: true }),
+        onProgress: (mk, ev) => {
+          if (ev.label.startsWith('done')) {
+            prog.update(ev.slot, null)
+            prog.log(`✓ ${ev.flag} ${ev.market}  ${ev.label}`)
+          } else {
+            prog.update(ev.slot, {
+              flag: ev.flag, market: ev.market,
+              step: ev.step, total: ev.totalSteps, label: ev.label.slice(0, 36),
+            })
+          }
+        },
+      })
+    } finally {
+      prog.stop()
+      Object.assign(console, realConsole)
+      for (const [level, args] of buffered) realConsole[level](...args)
     }
 
-    await scrape({
-      models: modelList,
-      markets: marketList,
-      concurrency,
-      onPage: makeOnPage(total, { quiet: true }),
-      onProgress: (mk, ev) => {
-        const b = bars.get(mk)
-        if (b) b.update(ev.step, { flag: ev.flag, market: ev.market, label: ev.label.slice(0, 36) });
-      },
-    })
-    multibar.stop()
     console.log(`\nDone. Upserted ${total.count} listings.`)
     await finalize('tesla', runStart, total)
   })

@@ -41,6 +41,7 @@ const en = {
   sort_year_oldest: "Year (oldest)",
   sort_biggest_drop_eur: "Biggest drop (€)",
   sort_biggest_drop_pct: "Biggest drop (%)",
+  sort_country: "Country",
   // Cards
   card_view: "View",
   card_crawled: "Crawled",
@@ -226,6 +227,7 @@ const fr: Record<TKey, string> = {
   sort_year_oldest: "Année (ancienne)",
   sort_biggest_drop_eur: "Meilleure baisse (€)",
   sort_biggest_drop_pct: "Meilleure baisse (%)",
+  sort_country: "Pays",
   // Cards
   card_view: "Voir",
   card_crawled: "Crawlé le",

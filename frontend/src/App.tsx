@@ -70,6 +70,7 @@ function SortBar({ filters, setFilters }: {
     { label: t("sort_year_oldest"),      sort_by: "year"       as const, sort_dir: "asc"  as const },
     { label: t("sort_biggest_drop_eur"), sort_by: "price_delta" as const, sort_dir: "desc" as const },
     { label: t("sort_biggest_drop_pct"), sort_by: "drop_pct"    as const, sort_dir: "desc" as const },
+    { label: t("sort_country"),          sort_by: "market"     as const, sort_dir: "asc"  as const },
   ];
   const currentKey = `${filters.sort_by ?? "scraped_at"}:${filters.sort_dir ?? "desc"}`;
   return (
