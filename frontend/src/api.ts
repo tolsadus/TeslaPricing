@@ -19,6 +19,14 @@ const COLOR_OR: Record<string, string> = {
   Rouge: "color.ilike.%rouge%",
 };
 
+// Country = Tesla listings in that market, plus non-Tesla sources based in it
+// (other sources don't set `market`). See SOURCE_COUNTRY in utils.ts.
+const COUNTRY_OR: Record<string, string> = {
+  FR: "and(source.eq.tesla,market.eq.FR),source.in.(leboncoin,lacentrale,capcar,lbauto,aramisauto,gmecars,renew,heycar,alcopa,ewigo)",
+  BE: "and(source.eq.tesla,market.eq.BE),source.eq.nikola",
+  NL: "and(source.eq.tesla,market.eq.NL),source.eq.mmxbv",
+};
+
 function applyFilters<T>(query: T, filters: ListingFilters): T {
   let q = query as any;
   if (filters.hide_sold) q = q.eq("is_sold", false).is("removed_at", null);
@@ -27,6 +35,7 @@ function applyFilters<T>(query: T, filters: ListingFilters): T {
   if (filters.autopilot) q = q.eq("autopilot", filters.autopilot);
   if (filters.seats !== undefined) q = q.eq("seats", filters.seats);
   if (filters.color_family && COLOR_OR[filters.color_family]) q = q.or(COLOR_OR[filters.color_family]);
+  if (filters.country && COUNTRY_OR[filters.country]) q = q.or(COUNTRY_OR[filters.country]);
   if (filters.min_price !== undefined) q = q.gte("price", filters.min_price);
   if (filters.max_price !== undefined) q = q.lte("price", filters.max_price);
   if (filters.min_year !== undefined) q = q.gte("year", filters.min_year);
@@ -129,7 +138,7 @@ export async function fetchTrends(): Promise<TrendPoint[]> {
 export async function fetchListingsForMap(filters: ListingFilters = {}): Promise<Listing[]> {
   let query = supabase
     .from("listings_with_delta")
-    .select("id, source, title, model, price, year, mileage_km, image_url, latitude, longitude, drivetrain, autopilot, location, url")
+    .select("id, source, title, model, price, year, mileage_km, image_url, latitude, longitude, drivetrain, autopilot, location, url, currency, market")
     .not("latitude", "is", null)
     .not("longitude", "is", null)
     .limit(5000);

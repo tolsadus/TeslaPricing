@@ -2,7 +2,7 @@ declare const __GIT_BRANCH__: string;
 declare const __GIT_COMMIT__: string;
 
 import { useEffect, useRef, useState } from "react";
-import { fetchListings, fetchStats } from "./api";
+import { fetchListings, fetchListingsByIds, fetchStats } from "./api";
 import ListingDetail from "./ListingDetail";
 import Trends from "./Trends";
 import Dropped from "./Dropped";
@@ -17,22 +17,18 @@ import ImgWithFallback from "./ImgWithFallback";
 import { useSaved } from "./useSaved";
 import { useHidden } from "./useHidden";
 import { useCompare } from "./useCompare";
+import { usePinned } from "./usePinned";
 import { useAuth } from "./useAuth";
 import { useTranslation } from "./i18n";
 import type { Listing, ListingFilters } from "./types";
-import { getDrivetrain, DRIVETRAIN_LABEL, formatFuel, getCountry, getCountryByCode } from "./utils";
+import { getDrivetrain, DRIVETRAIN_LABEL, formatFuel, getCountry, getCountryByCode, formatPrice, formatMileage } from "./utils";
 
 const SHOW_ADS = false;
 
-function formatPrice(v: number | null, locale: string): string {
-  if (v === null) return "—";
-  return new Intl.NumberFormat(locale, { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(v);
-}
-
-function formatKm(v: number | null, newLabel = "New", locale = "fr-FR"): string {
+function formatKm(v: number | null, market: string | null, newLabel = "New", locale = "fr-FR"): string {
   if (v === null) return "—";
   if (v <= 1000) return newLabel;
-  return `${new Intl.NumberFormat(locale).format(v)} km`;
+  return formatMileage(v, market, locale);
 }
 
 function formatDate(iso: string, locale: string): string {
@@ -70,7 +66,6 @@ function SortBar({ filters, setFilters }: {
     { label: t("sort_year_oldest"),      sort_by: "year"       as const, sort_dir: "asc"  as const },
     { label: t("sort_biggest_drop_eur"), sort_by: "price_delta" as const, sort_dir: "desc" as const },
     { label: t("sort_biggest_drop_pct"), sort_by: "drop_pct"    as const, sort_dir: "desc" as const },
-    { label: t("sort_country"),          sort_by: "market"     as const, sort_dir: "asc"  as const },
   ];
   const currentKey = `${filters.sort_by ?? "scraped_at"}:${filters.sort_dir ?? "desc"}`;
   return (
@@ -203,7 +198,21 @@ export default function App() {
   const { toggle: toggleHidden, isHidden, hidden, clearAll: clearHidden } = useHidden(user);
   const [showHidden, setShowHidden] = useState(false);
   const { ids: compareIds, toggle: toggleCompare, clear: clearCompare, isComparing } = useCompare();
+  const { pinned, toggle: togglePin, isPinned } = usePinned(user);
+  const [pinnedListings, setPinnedListings] = useState<Listing[]>([]);
   const sentinelRef = useRef<HTMLDivElement>(null);
+
+  // Pinned listings are fetched by id so they stay at the top regardless of filters/sort.
+  useEffect(() => {
+    const ids = [...pinned];
+    if (ids.length === 0) { setPinnedListings([]); return; }
+    fetchListingsByIds(ids)
+      .then((rows) => {
+        const byId = new Map(rows.map((r) => [r.id, r]));
+        setPinnedListings(ids.map((id) => byId.get(id)).filter((l): l is Listing => l != null));
+      })
+      .catch(() => {});
+  }, [pinned]);
 
   useEffect(() => {
     const { limit: _, ...toSave } = filters;
@@ -258,6 +267,68 @@ export default function App() {
       .catch((e) => setError(e.message))
       .finally(() => setLoadingMore(false));
   }
+
+  const renderPinnedChip = (listing: Listing) => (
+    <a key={listing.id} className="pinned-chip" href={`#/listing/${listing.id}`}>
+      {listing.image_url && <img src={listing.image_url} alt="" referrerPolicy="no-referrer" />}
+      <div className="pinned-chip-info">
+        <span className="pinned-chip-title">{listing.title}</span>
+        <span className="pinned-chip-price">{formatPrice(listing.price, listing.currency, locale)}</span>
+      </div>
+      <button className="pinned-chip-unpin" onClick={(e) => { e.preventDefault(); togglePin(listing.id); }} aria-label={t("unpin_listing")} title={t("unpin_listing")}>📌</button>
+    </a>
+  );
+
+  const renderCard = (listing: Listing) => (
+    <li key={listing.id} className={`card${isPinned(listing.id) ? " card-pinned" : ""}${isHidden(listing.id) ? " card-hidden" : ""}${listing.removed_at || listing.is_sold ? " card-removed" : ""}`}>
+      <div className="card-img-wrap">
+        <ImgWithFallback src={listing.image_url} alt={listing.title} fallbackText={t("no_image")} />
+        <button className={`bookmark-btn${isSaved(listing.id) ? " active" : ""}`} onClick={() => toggle(listing.id)} aria-label={t("save_listing")}>🔖</button>
+        <button className={`hide-btn${isHidden(listing.id) ? " active" : ""}`} onClick={() => toggleHidden(listing.id)} aria-label={isHidden(listing.id) ? t("unhide_listing") : t("hide_listing")} title={isHidden(listing.id) ? t("unhide_listing") : t("hide_listing")}>{isHidden(listing.id) ? "🙈" : "👁"}</button>
+        <button className={`compare-btn${isComparing(listing.id) ? " active" : ""}${compareIds.length >= 3 && !isComparing(listing.id) ? " disabled" : ""}`} onClick={() => { if (compareIds.length < 3 || isComparing(listing.id)) toggleCompare(listing.id); }} aria-label={t("compare_add")} title={t("compare_add")}>⊕</button>
+        <button className={`pin-btn${isPinned(listing.id) ? " active" : ""}`} onClick={() => togglePin(listing.id)} aria-label={isPinned(listing.id) ? t("unpin_listing") : t("pin_listing")} title={isPinned(listing.id) ? t("unpin_listing") : t("pin_listing")}>📌</button>
+        {listing.price_delta !== null && listing.price_delta > 0 && listing.max_price !== null && (
+          <div className="card-drop-badge">
+            −{formatPrice(listing.price_delta, listing.currency, locale)}
+            <span className="card-drop-pct">−{Math.round((listing.price_delta / listing.max_price) * 100)}%</span>
+          </div>
+        )}
+      </div>
+      <div className="card-body">
+        <h3>{listing.title}</h3>
+        <div className="card-badges">
+          {(() => { const dt = (listing.drivetrain as keyof typeof DRIVETRAIN_LABEL | null) ?? getDrivetrain(listing); return dt ? <span className={`drivetrain-badge dt-${dt.toLowerCase()}${filters.drivetrain === dt ? " badge-active" : " badge-clickable"}`} onClick={() => setFilters((f) => ({ ...f, drivetrain: f.drivetrain === dt ? undefined : dt }))}>{DRIVETRAIN_LABEL[dt] ?? dt}</span> : null; })()}
+          {listing.autopilot && <span className={`autopilot-badge ap-${listing.autopilot.toLowerCase()}${filters.autopilot === listing.autopilot ? " badge-active" : " badge-clickable"}`} onClick={() => setFilters((f) => ({ ...f, autopilot: f.autopilot === listing.autopilot ? undefined : listing.autopilot! }))}>{listing.autopilot}</span>}
+          {(() => { const c = getCountryByCode(listing.market) ?? getCountry(listing.source); return c ? <span className={`country-badge country-${c.code.toLowerCase()}`} title={c.name}>{c.flag} {c.code}</span> : null; })()}
+          {listing.is_sold && <span className="sold-badge">{t("badge_sold")}</span>}
+          {listing.auction_date && <a className="auction-badge badge-clickable" href="#/auctions">🔨 Auction</a>}
+        </div>
+        <div className="price-row">
+          <p className="price">{formatPrice(listing.price, listing.currency, locale)}</p>
+          {listing.price_delta !== null && listing.price_delta > 0 && listing.max_price !== null && (
+            <span className="price-delta delta-down"><s>{formatPrice(listing.max_price, listing.currency, locale)}</s></span>
+          )}
+        </div>
+        <p className="meta">
+          {listing.year ?? "—"} · {formatKm(listing.mileage_km, listing.market, t("card_new"), locale)} · {formatFuel(listing.fuel, t)}
+        </p>
+        <p className="location">{listing.location ?? ""}</p>
+        <p className="scraped-at">{t("card_crawled")} {formatDate(listing.scraped_at, locale)}</p>
+        <div className="cta-row">
+          <a className="btn btn-primary" href={`#/listing/${listing.id}`}>{t("card_view")}</a>
+          <button
+            type="button"
+            className={`btn btn-secondary source-filter-btn${filters.source === listing.source ? " active" : ""}`}
+            aria-pressed={filters.source === listing.source}
+            title={filters.source === listing.source ? t("filter_all") : `${t("filter_source")}: ${listing.source}`}
+            onClick={() => setFilters((f) => ({ ...f, source: f.source === listing.source ? undefined : listing.source }))}
+          >
+            {listing.source}
+          </button>
+        </div>
+      </div>
+    </li>
+  );
 
   return (
     <div className="app">
@@ -370,8 +441,12 @@ export default function App() {
                 <p className="state">{t("no_listings")}</p>
               )}
 
+              {pinnedListings.length > 0 && (
+                <div className="pinned-bar">{pinnedListings.map(renderPinnedChip)}</div>
+              )}
+
               <ul className="grid">
-                {listings.filter((l) => showHidden || !isHidden(l.id)).flatMap((listing, idx) => {
+                {listings.filter((l) => !pinned.has(l.id) && (showHidden || !isHidden(l.id))).flatMap((listing, idx) => {
                   const items = [];
                   if (SHOW_ADS && idx > 0 && idx % 20 === 0) {
                     items.push(
@@ -384,55 +459,7 @@ export default function App() {
                       </li>
                     );
                   }
-                  items.push(
-                    <li key={listing.id} className={`card${isHidden(listing.id) ? " card-hidden" : ""}${listing.removed_at || listing.is_sold ? " card-removed" : ""}`}>
-                    <div className="card-img-wrap">
-                      <ImgWithFallback src={listing.image_url} alt={listing.title} fallbackText={t("no_image")} />
-                      <button className={`bookmark-btn${isSaved(listing.id) ? " active" : ""}`} onClick={() => toggle(listing.id)} aria-label={t("save_listing")}>🔖</button>
-                      <button className={`hide-btn${isHidden(listing.id) ? " active" : ""}`} onClick={() => toggleHidden(listing.id)} aria-label={isHidden(listing.id) ? t("unhide_listing") : t("hide_listing")} title={isHidden(listing.id) ? t("unhide_listing") : t("hide_listing")}>{isHidden(listing.id) ? "🙈" : "👁"}</button>
-                      <button className={`compare-btn${isComparing(listing.id) ? " active" : ""}${compareIds.length >= 3 && !isComparing(listing.id) ? " disabled" : ""}`} onClick={() => { if (compareIds.length < 3 || isComparing(listing.id)) toggleCompare(listing.id); }} aria-label={t("compare_add")} title={t("compare_add")}>⊕</button>
-                      {listing.price_delta !== null && listing.price_delta > 0 && listing.max_price !== null && (
-                        <div className="card-drop-badge">
-                          −{formatPrice(listing.price_delta, locale)}
-                          <span className="card-drop-pct">−{Math.round((listing.price_delta / listing.max_price) * 100)}%</span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="card-body">
-                      <h3>{listing.title}</h3>
-                      <div className="card-badges">
-                        {(() => { const dt = (listing.drivetrain as keyof typeof DRIVETRAIN_LABEL | null) ?? getDrivetrain(listing); return dt ? <span className={`drivetrain-badge dt-${dt.toLowerCase()}${filters.drivetrain === dt ? " badge-active" : " badge-clickable"}`} onClick={() => setFilters((f) => ({ ...f, drivetrain: f.drivetrain === dt ? undefined : dt }))}>{DRIVETRAIN_LABEL[dt] ?? dt}</span> : null; })()}
-                        {listing.autopilot && <span className={`autopilot-badge ap-${listing.autopilot.toLowerCase()}${filters.autopilot === listing.autopilot ? " badge-active" : " badge-clickable"}`} onClick={() => setFilters((f) => ({ ...f, autopilot: f.autopilot === listing.autopilot ? undefined : listing.autopilot! }))}>{listing.autopilot}</span>}
-                        {(() => { const c = getCountryByCode(listing.market) ?? getCountry(listing.source); return c ? <span className={`country-badge country-${c.code.toLowerCase()}`} title={c.name}>{c.flag} {c.code}</span> : null; })()}
-                        {listing.is_sold && <span className="sold-badge">{t("badge_sold")}</span>}
-                        {listing.auction_date && <a className="auction-badge badge-clickable" href="#/auctions">🔨 Auction</a>}
-                      </div>
-                      <div className="price-row">
-                        <p className="price">{formatPrice(listing.price, locale)}</p>
-                        {listing.price_delta !== null && listing.price_delta > 0 && listing.max_price !== null && (
-                          <span className="price-delta delta-down"><s>{formatPrice(listing.max_price, locale)}</s></span>
-                        )}
-                      </div>
-                      <p className="meta">
-                        {listing.year ?? "—"} · {formatKm(listing.mileage_km, t("card_new"), locale)} · {formatFuel(listing.fuel, t)}
-                      </p>
-                      <p className="location">{listing.location ?? ""}</p>
-                      <p className="scraped-at">{t("card_crawled")} {formatDate(listing.scraped_at, locale)}</p>
-                      <div className="cta-row">
-                        <a className="btn btn-primary" href={`#/listing/${listing.id}`}>{t("card_view")}</a>
-                        <button
-                          type="button"
-                          className={`btn btn-secondary source-filter-btn${filters.source === listing.source ? " active" : ""}`}
-                          aria-pressed={filters.source === listing.source}
-                          title={filters.source === listing.source ? t("filter_all") : `${t("filter_source")}: ${listing.source}`}
-                          onClick={() => setFilters((f) => ({ ...f, source: f.source === listing.source ? undefined : listing.source }))}
-                        >
-                          {listing.source}
-                        </button>
-                      </div>
-                    </div>
-                  </li>
-                  );
+                  items.push(renderCard(listing));
                   return items;
                 })}
               </ul>

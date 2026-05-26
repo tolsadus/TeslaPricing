@@ -135,7 +135,7 @@
 }
 .card-drop-badge {
   position: absolute;
-  top: 0.6rem;
+  top: 3rem;
   right: 0.6rem;
   background: #065f46;
   color: #fff;
@@ -160,7 +160,7 @@
 }
 .bookmark-btn {
   position: absolute;
-  top: 44px;
+  bottom: 8px;
   left: 8px;
   width: 32px;
   height: 32px;
@@ -1791,8 +1791,8 @@ code {
 
 .hide-btn {
   position: absolute;
-  top: 0.5rem;
-  left: 3rem;
+  bottom: 0.5rem;
+  right: 0.5rem;
   width: 2rem;
   height: 2rem;
   border-radius: 50%;
@@ -1811,6 +1811,94 @@ code {
 }
 .hide-btn:hover { background: var(--floating-btn-bg-hover); color: var(--text); transform: scale(1.1); }
 .hide-btn.active { background: var(--text); color: var(--bg); }
+
+.pin-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  border: none;
+  background: var(--floating-btn-bg);
+  backdrop-filter: blur(4px);
+  color: var(--floating-btn-fg);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s, transform 0.15s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+}
+.pin-btn:hover { background: var(--floating-btn-bg-hover); color: var(--text); transform: scale(1.1); }
+.pin-btn.active { background: var(--text); color: var(--bg); }
+
+/* Pin + eye fade in on hover (and stay shown when active), like the bookmark. */
+.pin-btn, .hide-btn { opacity: 0; transition: opacity 0.15s, background 0.15s, color 0.15s, transform 0.15s; }
+.card:hover .pin-btn,
+.card:hover .hide-btn,
+.pin-btn.active,
+.hide-btn.active { opacity: 1; }
+
+.card-pinned { outline: 2px solid var(--text); outline-offset: 2px; }
+
+/* Pinned listings stay stuck below the top bar while the rest scrolls. */
+.pinned-bar {
+  position: sticky;
+  top: 4.5rem;
+  z-index: 5;
+  background: var(--bg);
+  padding: 0.6rem 0;
+  margin-bottom: 0.85rem;
+  border-bottom: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 1.25rem;
+}
+.pinned-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.35rem 0.5rem;
+  text-decoration: none;
+  color: var(--text);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  transition: box-shadow 0.15s;
+}
+.pinned-chip:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+.pinned-chip img {
+  width: 64px;
+  height: 42px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: var(--surface-img);
+  flex-shrink: 0;
+}
+.pinned-chip-info { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.pinned-chip-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pinned-chip-price { font-size: 0.8rem; color: var(--text-muted, #888); }
+.pinned-chip-unpin {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.95rem;
+  line-height: 1;
+  padding: 0.25rem;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+.pinned-chip-unpin:hover { background: var(--floating-btn-bg-hover); }
 
 .card-hidden > .card-img-wrap,
 .card-hidden > .card-body { opacity: 0.45; }

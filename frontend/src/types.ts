@@ -84,6 +84,7 @@ export type ListingFilters = {
   autopilot?: string;
   seats?: number;
   color_family?: string;
+  country?: string;
   min_price?: number;
   max_price?: number;
   min_year?: number;

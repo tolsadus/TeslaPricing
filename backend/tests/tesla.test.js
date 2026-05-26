@@ -44,6 +44,13 @@ test('parseItem: mileage_km=0 for new vehicles without odometer', () => {
   assert.equal(listing.mileage_km, 0)
 })
 
+test('parseItem: converts Miles odometer to km', () => {
+  const listing = parseItem(
+    { VIN: 'M', Odometer: 91048, OdometerType: 'Miles' }, 'm3', 'used', MARKETS.us
+  )
+  assert.equal(listing.mileage_km, Math.round(91048 * 1.60934))
+})
+
 test('parseItem: falls back to Price then PurchasePrice', () => {
   const a = parseItem({ VIN: 'A', Price: 40000 }, 'm3', 'new', MARKETS.fr)
   const b = parseItem({ VIN: 'B', PurchasePrice: 30000 }, 'm3', 'new', MARKETS.fr)

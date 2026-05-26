@@ -2,19 +2,14 @@ import { useEffect, useState } from "react";
 import { fetchListingsByIds } from "./api";
 import type { Listing } from "./types";
 import { useAuth } from "./useAuth";
-import { getDrivetrain, DRIVETRAIN_LABEL, formatFuel } from "./utils";
+import { getDrivetrain, DRIVETRAIN_LABEL, formatFuel, formatPrice, formatMileage } from "./utils";
 import { useTranslation } from "./i18n";
 import ImgWithFallback from "./ImgWithFallback";
 
-function formatPrice(v: number | null): string {
-  if (v === null) return "—";
-  return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(v);
-}
-
-function formatKm(v: number | null, newLabel = "New"): string {
+function formatKm(v: number | null, market: string | null, newLabel = "New"): string {
   if (v === null) return "—";
   if (v <= 100) return newLabel;
-  return `${new Intl.NumberFormat("fr-FR").format(v)} km`;
+  return formatMileage(v, market);
 }
 
 function formatDate(iso: string): string {
@@ -81,7 +76,7 @@ export default function Saved({ saved, toggle, isComparing, toggleCompare, compa
                 <button className={`compare-btn${isComparing(listing.id) ? " active" : ""}${compareCount >= 3 && !isComparing(listing.id) ? " disabled" : ""}`} onClick={() => { if (compareCount < 3 || isComparing(listing.id)) toggleCompare(listing.id); }} aria-label={t("compare_add")} title={t("compare_add")}>⊕</button>
                 {listing.price_delta !== null && listing.price_delta > 0 && listing.max_price !== null && (
                   <div className="card-drop-badge">
-                    −{formatPrice(listing.price_delta)}
+                    −{formatPrice(listing.price_delta, listing.currency)}
                     <span className="card-drop-pct">−{Math.round((listing.price_delta / listing.max_price) * 100)}%</span>
                   </div>
                 )}
@@ -93,12 +88,12 @@ export default function Saved({ saved, toggle, isComparing, toggleCompare, compa
                   {listing.autopilot && <span className={`autopilot-badge ap-${listing.autopilot.toLowerCase()}`}>{listing.autopilot}</span>}
                 </div>
                 <div className="price-row">
-                  <p className="price">{formatPrice(listing.price)}</p>
+                  <p className="price">{formatPrice(listing.price, listing.currency)}</p>
                   {listing.price_delta !== null && listing.price_delta > 0 && listing.max_price !== null && (
-                    <span className="price-delta delta-down"><s>{formatPrice(listing.max_price)}</s></span>
+                    <span className="price-delta delta-down"><s>{formatPrice(listing.max_price, listing.currency)}</s></span>
                   )}
                 </div>
-                <p className="meta">{listing.year ?? "—"} · {formatKm(listing.mileage_km, t("card_new"))} · {formatFuel(listing.fuel, t)}</p>
+                <p className="meta">{listing.year ?? "—"} · {formatKm(listing.mileage_km, listing.market, t("card_new"))} · {formatFuel(listing.fuel, t)}</p>
                 <p className="location">{listing.location ?? ""}</p>
                 <p className="scraped-at">{t("card_crawled")} {formatDate(listing.scraped_at)}</p>
                 <div className="cta-row">

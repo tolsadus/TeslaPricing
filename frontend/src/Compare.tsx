@@ -1,18 +1,13 @@
 import { useEffect, useState } from "react";
 import { fetchListing, fetchPhotos, fetchPriceHistory } from "./api";
 import type { Listing, PricePoint } from "./types";
-import { getDrivetrain, DRIVETRAIN_LABEL, formatColor } from "./utils";
+import { getDrivetrain, DRIVETRAIN_LABEL, formatColor, formatPrice, formatMileage } from "./utils";
 import { useTranslation } from "./i18n";
 
-function formatPrice(v: number | null): string {
-  if (v === null) return "—";
-  return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(v);
-}
-
-function formatKm(v: number | null, newLabel: string): string {
+function formatKm(v: number | null, market: string | null, newLabel: string): string {
   if (v === null) return "—";
   if (v <= 100) return newLabel;
-  return `${new Intl.NumberFormat("fr-FR").format(v)} km`;
+  return formatMileage(v, market);
 }
 
 function formatDate(iso: string): string {
@@ -103,10 +98,10 @@ type SpecRow = {
 
 function buildSpecs(cols: ColData[], t: (k: any) => string, lang: string): SpecRow[] {
   return [
-    { label: t("compare_spec_price"),      values: cols.map((c) => formatPrice(c.listing.price)) },
+    { label: t("compare_spec_price"),      values: cols.map((c) => formatPrice(c.listing.price, c.listing.currency)) },
     { label: t("compare_spec_model"),      values: cols.map((c) => [c.listing.make, c.listing.model, c.listing.version].filter(Boolean).join(" ") || null) },
     { label: t("compare_spec_year"),       values: cols.map((c) => c.listing.year != null ? String(c.listing.year) : null) },
-    { label: t("compare_spec_mileage"),    values: cols.map((c) => c.listing.mileage_km != null ? formatKm(c.listing.mileage_km, t("spec_new")) : null) },
+    { label: t("compare_spec_mileage"),    values: cols.map((c) => c.listing.mileage_km != null ? formatKm(c.listing.mileage_km, c.listing.market, t("spec_new")) : null) },
     { label: t("compare_spec_drivetrain"), values: cols.map((c) => { const dt = (c.listing.drivetrain as any) ?? getDrivetrain(c.listing); return dt ? (DRIVETRAIN_LABEL[dt as keyof typeof DRIVETRAIN_LABEL] ?? dt) : null; }) },
     { label: t("compare_spec_autopilot"),  values: cols.map((c) => c.listing.autopilot ?? null) },
     { label: t("compare_spec_power"),      values: cols.map((c) => c.listing.horse_power != null ? `${c.listing.horse_power} ch` : null) },
@@ -181,7 +176,7 @@ export default function Compare({ ids, onRemove, onClear }: { ids: number[]; onR
                       <div className="cmp-header-accent" style={{ background: color }} />
                       <PhotoCell photos={col.photos} fallback={col.listing.image_url} alt={col.listing.title ?? t("photo_alt")} />
                       <p className="cmp-header-title">{col.listing.title}</p>
-                      <p className="cmp-header-price">{formatPrice(col.listing.price)}</p>
+                      <p className="cmp-header-price">{formatPrice(col.listing.price, col.listing.currency)}</p>
                       <div className="cmp-header-actions">
                         <a className="btn btn-primary btn-sm" href={col.listing.url} target="_blank" rel="noreferrer">{t("compare_open")}</a>
                         <button className="btn btn-secondary btn-sm" onClick={() => onRemove(col.listing.id)}>{t("compare_remove")}</button>
