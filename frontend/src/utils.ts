@@ -22,6 +22,23 @@ export function getDrivetrain(listing: Listing): Drivetrain | null {
   return null;
 }
 
+// Markets where Tesla reports/displays odometer in miles. Mileage is stored as
+// canonical km, so convert for display in these markets.
+const MILE_MARKETS = new Set(["US", "GB", "PR"]);
+
+export function formatPrice(value: number | null, currency: string | null = "EUR", locale = "fr-FR"): string {
+  if (value == null) return "—";
+  return new Intl.NumberFormat(locale, { style: "currency", currency: currency || "EUR", maximumFractionDigits: 0 }).format(value);
+}
+
+export function formatMileage(km: number | null, market: string | null = null, locale = "fr-FR"): string {
+  if (km == null) return "—";
+  if (market && MILE_MARKETS.has(market.toUpperCase())) {
+    return `${new Intl.NumberFormat(locale).format(Math.round(km / 1.60934))} mi`;
+  }
+  return `${new Intl.NumberFormat(locale).format(km)} km`;
+}
+
 export function formatFuel(fuel: string | null, t: (k: any) => string): string {
   if (!fuel) return "—";
   const n = fuel.normalize("NFD").replace(/[̀-ͯ]/g, "");

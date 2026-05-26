@@ -6,6 +6,7 @@ import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import { fetchListingsForMap } from "./api";
 import { useTranslation } from "./i18n";
+import { formatPrice, formatMileage } from "./utils";
 import type { Listing, ListingFilters } from "./types";
 
 // Fix default marker icons (Leaflet's default icon URLs break under bundlers).
@@ -19,15 +20,10 @@ L.Icon.Default.mergeOptions({
 const FRANCE_CENTER: L.LatLngTuple = [46.6, 2.4];
 const FRANCE_ZOOM = 6;
 
-function formatPrice(v: number | null, locale: string): string {
-  if (v === null) return "—";
-  return new Intl.NumberFormat(locale, { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(v);
-}
-
-function formatKm(v: number | null, locale: string, newLabel: string): string {
+function formatKm(v: number | null, market: string | null, locale: string, newLabel: string): string {
   if (v === null) return "—";
   if (v <= 100) return newLabel;
-  return `${new Intl.NumberFormat(locale).format(v)} km`;
+  return formatMileage(v, market, locale);
 }
 
 function escapeHtml(s: string): string {
@@ -36,13 +32,13 @@ function escapeHtml(s: string): string {
 
 function popupHtml(l: Listing, locale: string, t: (k: import("./i18n").TKey) => string): string {
   const img = l.image_url ? `<img src="${escapeHtml(l.image_url)}" alt="" />` : "";
-  const meta = [l.year ?? "—", formatKm(l.mileage_km, locale, t("card_new")), l.location ?? ""].filter(Boolean).join(" · ");
+  const meta = [l.year ?? "—", formatKm(l.mileage_km, l.market, locale, t("card_new")), l.location ?? ""].filter(Boolean).join(" · ");
   return `
     <div class="map-popup">
       ${img}
       <div class="map-popup-body">
         <h4>${escapeHtml(l.title)}</h4>
-        <div class="map-popup-price">${formatPrice(l.price, locale)}</div>
+        <div class="map-popup-price">${formatPrice(l.price, l.currency, locale)}</div>
         <div class="map-popup-meta">${escapeHtml(meta)}</div>
         <a class="map-popup-link" href="#/listing/${l.id}">${t("card_view")} →</a>
       </div>

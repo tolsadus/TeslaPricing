@@ -82,7 +82,8 @@ function parseItem(item, model, condition, marketCfg) {
   if (trim) titleParts.push(trim)
 
   const odometer = item.Odometer
-  const mileage_km = typeof odometer === 'number' && odometer > 0 ? Math.round(odometer) : 0
+  const odometerKm = item.OdometerType === 'Miles' ? odometer * 1.60934 : odometer
+  const mileage_km = typeof odometer === 'number' && odometer > 0 ? Math.round(odometerKm) : 0
 
   const paintOption = (item.OptionCodeData || []).find(o => o.group === 'PAINT')
   const rawColor = paintOption?.long_name ?? paintOption?.name ?? null

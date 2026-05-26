@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "./i18n";
+import { getCountryByCode } from "./utils";
 import type { ListingFilters } from "./types";
 
 const MODELS = ["Model S", "Model 3", "Model X", "Model Y", "Cybertruck", "Roadster"] as const;
+const COUNTRIES = ["FR", "BE", "NL"] as const;
 const SOURCES = ["tesla", "leboncoin", "lacentrale", "capcar", "lbauto", "aramisauto", "gmecars", "renew", "heycar", "alcopa", "mmxbv", "nikola", "ewigo"] as const;
 const DRIVETRAINS = ["RWD", "AWD", "Performance", "Plaid"] as const;
 const AUTOPILOTS = ["EAP", "FSD"] as const;
@@ -206,6 +208,20 @@ export default function Sidebar({ filters, setFilters, defaultLimit, resetKey, b
               <button key={c} type="button" aria-pressed={isActive}
                 className={`chip-btn ${isActive ? "active" : ""}`}
                 onClick={() => setFilters((f) => ({ ...f, color_family: f.color_family === c ? undefined : c }))}>{c}</button>
+            );
+          })}
+        </div>
+      </SidebarSection>
+
+      <SidebarSection title={t("filter_country")}>
+        <div className="chip-options">
+          {COUNTRIES.map((c) => {
+            const isActive = filters.country === c;
+            const flag = getCountryByCode(c)?.flag ?? "";
+            return (
+              <button key={c} type="button" aria-pressed={isActive}
+                className={`chip-btn ${isActive ? "active" : ""}`}
+                onClick={() => setFilters((f) => ({ ...f, country: f.country === c ? undefined : c }))}>{flag} {c}</button>
             );
           })}
         </div>

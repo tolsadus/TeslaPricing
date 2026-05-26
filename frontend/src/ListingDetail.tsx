@@ -2,19 +2,9 @@ import { useEffect, useState } from "react";
 import { fetchListing, fetchPhotos, fetchPriceHistory, fetchVoteSummary, castVote, clearVote } from "./api";
 import type { VoteSummary, VoteValue } from "./api";
 import type { Listing, PricePoint } from "./types";
-import { getDrivetrain, DRIVETRAIN_LABEL, formatFuel, formatColor } from "./utils";
+import { getDrivetrain, DRIVETRAIN_LABEL, formatFuel, formatColor, formatPrice, formatMileage } from "./utils";
 import { useTranslation } from "./i18n";
 import { useAuth } from "./useAuth";
-
-function formatPrice(v: number | null): string {
-  if (v === null) return "—";
-  return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(v);
-}
-
-function formatKm(v: number | null): string {
-  if (v === null) return "—";
-  return `${new Intl.NumberFormat("fr-FR").format(v)} km`;
-}
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" });
@@ -27,7 +17,7 @@ function formatDateTime(iso: string): string {
 type ChartPoint = { x: number; y: number; price: number; date: string };
 type Tooltip = { x: number; y: number; price: number; date: string } | null;
 
-function PriceChart({ points, emptyMessage }: { points: PricePoint[]; emptyMessage: string }) {
+function PriceChart({ points, emptyMessage, currency }: { points: PricePoint[]; emptyMessage: string; currency: string | null }) {
   const [tooltip, setTooltip] = useState<Tooltip>(null);
   const valid = points.filter((p) => p.price !== null) as { price: number; recorded_at: string }[];
   if (valid.length === 0) {
@@ -86,7 +76,7 @@ function PriceChart({ points, emptyMessage }: { points: PricePoint[]; emptyMessa
           <g key={i}>
             <line x1={PAD_L} y1={y} x2={W - PAD_R} y2={y} stroke="#e3e3e3" strokeWidth="1" />
             <text x={PAD_L - 10} y={y + 4} textAnchor="end" fontSize="11" fill="#8a8d93">
-              {formatPrice(Math.round(v))}
+              {formatPrice(Math.round(v), currency)}
             </text>
           </g>
         );
@@ -117,7 +107,7 @@ function PriceChart({ points, emptyMessage }: { points: PricePoint[]; emptyMessa
           <g>
             <rect x={tipX} y={tipY} width={TIP_W} height={TIP_H} rx="6" fill="#171a20" opacity="0.92" />
             <text x={tipX + TIP_W / 2} y={tipY + 16} textAnchor="middle" fontSize="12" fontWeight="600" fill="#fff">
-              {formatPrice(tooltip.price)}
+              {formatPrice(tooltip.price, currency)}
             </text>
             <text x={tipX + TIP_W / 2} y={tipY + 32} textAnchor="middle" fontSize="10" fill="#a0aec0">
               {formatDateTime(tooltip.date)}
@@ -237,10 +227,10 @@ export default function ListingDetail({ id, isSaved, onToggle }: { id: number; i
             {(() => { const dt = (listing.drivetrain as keyof typeof DRIVETRAIN_LABEL | null) ?? getDrivetrain(listing); return dt ? <span className={`drivetrain-badge dt-${dt.toLowerCase()}`}>{DRIVETRAIN_LABEL[dt] ?? dt}</span> : null; })()}
             {listing.autopilot && <span className={`autopilot-badge ap-${listing.autopilot.toLowerCase()}`}>{listing.autopilot}</span>}
           </div>
-          <p className="detail-price">{formatPrice(listing.price)}</p>
+          <p className="detail-price">{formatPrice(listing.price, listing.currency)}</p>
           <div className="detail-specs">
             {listing.year && <div className="spec-item"><span className="spec-label">{t("spec_year")}</span><span className="spec-value">{listing.year}</span></div>}
-            {listing.mileage_km != null && <div className="spec-item"><span className="spec-label">{t("spec_mileage")}</span><span className="spec-value">{listing.mileage_km <= 100 ? t("spec_new") : formatKm(listing.mileage_km)}</span></div>}
+            {listing.mileage_km != null && <div className="spec-item"><span className="spec-label">{t("spec_mileage")}</span><span className="spec-value">{listing.mileage_km <= 100 ? t("spec_new") : formatMileage(listing.mileage_km, listing.market)}</span></div>}
             {listing.fuel && <div className="spec-item"><span className="spec-label">{t("spec_fuel")}</span><span className="spec-value">{formatFuel(listing.fuel, t)}</span></div>}
             {listing.horse_power != null && <div className="spec-item"><span className="spec-label">{t("spec_power")}</span><span className="spec-value">{listing.horse_power} ch</span></div>}
             {listing.color && <div className="spec-item"><span className="spec-label">{t("spec_color")}</span><span className="spec-value">{formatColor(listing.color, lang)}</span></div>}
@@ -292,11 +282,11 @@ export default function ListingDetail({ id, isSaved, onToggle }: { id: number; i
           <h3>{t("price_history")}</h3>
           {delta !== null && (
             <span className={`delta ${delta < 0 ? "down" : "up"}`}>
-              {delta > 0 ? "+" : ""}{formatPrice(delta)} {t("price_highest")}
+              {delta > 0 ? "+" : ""}{formatPrice(delta, listing.currency)} {t("price_highest")}
             </span>
           )}
         </div>
-        <PriceChart points={history} emptyMessage={t("price_history_empty")} />
+        <PriceChart points={history} emptyMessage={t("price_history_empty")} currency={listing.currency} />
       </section>
     </div>
   );

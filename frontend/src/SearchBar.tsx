@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { searchListings, fetchModelCounts } from "./api";
 import type { Listing, ListingFilters } from "./types";
 import { useTranslation } from "./i18n";
+import { formatPrice, formatMileage } from "./utils";
 
 const MODELS = ["Model S", "Model 3", "Model X", "Model Y", "Cybertruck", "Roadster"] as const;
 
@@ -153,14 +154,13 @@ export default function SearchBar({ onApplyFilters, autoFocus, onClose }: Props)
     }
   }
 
-  function fmtPrice(v: number | null) {
-    if (v === null) return "—";
-    return new Intl.NumberFormat(locale, { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(v);
+  function fmtPrice(v: number | null, currency: string | null) {
+    return formatPrice(v, currency, locale);
   }
-  function fmtKm(v: number | null) {
+  function fmtKm(v: number | null, market: string | null) {
     if (v === null) return "—";
     if (v <= 100) return t("card_new");
-    return `${new Intl.NumberFormat(locale).format(v)} km`;
+    return formatMileage(v, market, locale);
   }
 
   const showDropdown = open && text.length > 0;
@@ -235,7 +235,7 @@ export default function SearchBar({ onApplyFilters, autoFocus, onClose }: Props)
                   <div className="search-row-text">
                     <div className="search-row-title">{r.title}</div>
                     <div className="search-row-sub">
-                      {r.year ?? "—"} · {fmtKm(r.mileage_km)} · {fmtPrice(r.price)}
+                      {r.year ?? "—"} · {fmtKm(r.mileage_km, r.market)} · {fmtPrice(r.price, r.currency)}
                     </div>
                   </div>
                   <span className="search-row-chev">›</span>
