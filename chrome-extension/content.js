@@ -86,28 +86,36 @@
   const I18N = {
     en: { day: 'd', dateLocale: 'en-US', historyTitle: 'Price history',
       seenFor: d => `Seen for ${d}d`, records: n => `${n} record${n > 1 ? 's' : ''}`,
-      noChange: 'no change', total: s => `${s} total`, footer: 'Data via TeslaPricing' },
+      noChange: 'no change', total: s => `${s} total`, footer: 'Data via TeslaPricing',
+      viewFull: 'View full price history' },
     fr: { day: 'j', dateLocale: 'fr-FR', historyTitle: 'Historique de prix',
       seenFor: d => `Vu depuis ${d}j`, records: n => `${n} relevé${n > 1 ? 's' : ''}`,
-      noChange: 'aucun changement', total: s => `${s} au total`, footer: 'Données via TeslaPricing' },
+      noChange: 'aucun changement', total: s => `${s} au total`, footer: 'Données via TeslaPricing',
+      viewFull: 'Voir tableau historique prix' },
     de: { day: 'T', dateLocale: 'de-DE', historyTitle: 'Preisverlauf',
       seenFor: d => `Seit ${d} T`, records: n => `${n} Eintr${n > 1 ? 'äge' : 'ag'}`,
-      noChange: 'keine Änderung', total: s => `${s} gesamt`, footer: 'Daten via TeslaPricing' },
+      noChange: 'keine Änderung', total: s => `${s} gesamt`, footer: 'Daten via TeslaPricing',
+      viewFull: 'Vollständigen Preisverlauf ansehen' },
     nl: { day: 'd', dateLocale: 'nl-NL', historyTitle: 'Prijsgeschiedenis',
       seenFor: d => `Sinds ${d}d`, records: n => `${n} meting${n > 1 ? 'en' : ''}`,
-      noChange: 'geen wijziging', total: s => `${s} totaal`, footer: 'Gegevens via TeslaPricing' },
+      noChange: 'geen wijziging', total: s => `${s} totaal`, footer: 'Gegevens via TeslaPricing',
+      viewFull: 'Volledige prijsgeschiedenis bekijken' },
     it: { day: 'g', dateLocale: 'it-IT', historyTitle: 'Storico prezzi',
       seenFor: d => `Visto da ${d}g`, records: n => `${n} rilevazion${n > 1 ? 'i' : 'e'}`,
-      noChange: 'nessuna variazione', total: s => `${s} in totale`, footer: 'Dati via TeslaPricing' },
+      noChange: 'nessuna variazione', total: s => `${s} in totale`, footer: 'Dati via TeslaPricing',
+      viewFull: 'Vedi lo storico completo dei prezzi' },
     es: { day: 'd', dateLocale: 'es-ES', historyTitle: 'Historial de precios',
       seenFor: d => `Visto hace ${d}d`, records: n => `${n} registro${n > 1 ? 's' : ''}`,
-      noChange: 'sin cambios', total: s => `${s} en total`, footer: 'Datos vía TeslaPricing' },
+      noChange: 'sin cambios', total: s => `${s} en total`, footer: 'Datos vía TeslaPricing',
+      viewFull: 'Ver historial completo de precios' },
     no: { day: 'd', dateLocale: 'nb-NO', historyTitle: 'Prishistorikk',
       seenFor: d => `Sett i ${d}d`, records: n => `${n} registrering${n > 1 ? 'er' : ''}`,
-      noChange: 'ingen endring', total: s => `${s} totalt`, footer: 'Data via TeslaPricing' },
+      noChange: 'ingen endring', total: s => `${s} totalt`, footer: 'Data via TeslaPricing',
+      viewFull: 'Se full prishistorikk' },
     sv: { day: 'd', dateLocale: 'sv-SE', historyTitle: 'Prishistorik',
       seenFor: d => `Sedd i ${d}d`, records: n => `${n} notering${n > 1 ? 'ar' : ''}`,
-      noChange: 'ingen ändring', total: s => `${s} totalt`, footer: 'Data via TeslaPricing' },
+      noChange: 'ingen ändring', total: s => `${s} totalt`, footer: 'Data via TeslaPricing',
+      viewFull: 'Visa fullständig prishistorik' },
   };
   const L = I18N[(navigator.language || 'en').slice(0, 2).toLowerCase()] || I18N.en;
 
@@ -194,6 +202,16 @@
       row.appendChild(left); row.appendChild(right);
       el.appendChild(row);
       prev = h.price;
+    }
+
+    if (data.id != null) {
+      const cta = document.createElement('a');
+      cta.className = 'tph-cta';
+      cta.href = `https://tolsadus.github.io/TeslaPricing/#/listing/${data.id}`;
+      cta.target = '_blank';
+      cta.rel = 'noopener noreferrer';
+      cta.textContent = L.viewFull;
+      el.appendChild(cta);
     }
 
     const footer = document.createElement('div');
