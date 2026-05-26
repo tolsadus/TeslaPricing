@@ -81,6 +81,23 @@
 .tph-popover .tph-row.tph-down span:last-child { color: #1a7f37; font-weight: 600; }
 .tph-popover .tph-row.tph-up span:last-child { color: #cf222e; font-weight: 600; }
 
+.tph-popover .tph-cta {
+  display: block;
+  margin-top: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #171a20;
+  color: #fff;
+  text-align: center;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.tph-popover .tph-cta:hover {
+  background: #2b2f37;
+}
+
 .tph-popover .tph-footer {
   margin-top: 10px;
   padding-top: 8px;
