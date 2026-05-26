@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Tesla Price History",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Show how each Tesla used-car listing has been repriced over time, directly on tesla website.",
   "content_scripts": [
     {
