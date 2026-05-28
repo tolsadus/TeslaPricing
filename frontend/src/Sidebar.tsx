@@ -11,6 +11,10 @@ const AUTOPILOTS = ["EAP", "FSD"] as const;
 const SEATS_OPTIONS = [5, 6, 7] as const;
 const COLOR_FAMILIES = ["Noir", "Blanc", "Gris", "Bleu", "Rouge"] as const;
 
+const PRICE_BOUNDS = { min: 0, max: 200000, step: 1000 };
+const YEAR_BOUNDS = { min: 2008, max: new Date().getFullYear(), step: 1 };
+const MILEAGE_BOUNDS = { min: 0, max: 300000, step: 1000 };
+
 function SidebarSection({ title, children, className }: { title: string; children: React.ReactNode; className?: string }) {
   return (
     <div className={`sidebar-section${className ? ` ${className}` : ""}`}>
@@ -20,12 +24,15 @@ function SidebarSection({ title, children, className }: { title: string; childre
   );
 }
 
-function RangeInputs({ minVal, maxVal, unit, disabled, ariaLabel, onChangeMin, onChangeMax }: {
+function RangeInputs({ minVal, maxVal, unit, disabled, ariaLabel, sliderMin, sliderMax, step = 1, onChangeMin, onChangeMax }: {
   minVal?: number;
   maxVal?: number;
   unit?: string;
   disabled?: boolean;
   ariaLabel: string;
+  sliderMin: number;
+  sliderMax: number;
+  step?: number;
   onChangeMin: (v: number | undefined) => void;
   onChangeMax: (v: number | undefined) => void;
 }) {
@@ -38,17 +45,49 @@ function RangeInputs({ minVal, maxVal, unit, disabled, ariaLabel, onChangeMin, o
   const minPlaceholder = unit ? `Min ${unit}` : "Min";
   const maxPlaceholder = unit ? `Max ${unit}` : "Max";
 
+  const clamp = (v: number) => Math.min(Math.max(v, sliderMin), sliderMax);
+  const sMin = clamp(minVal ?? sliderMin);
+  const sMax = clamp(maxVal ?? sliderMax);
+  const pct = (v: number) => ((v - sliderMin) / (sliderMax - sliderMin)) * 100;
+
+  const commitMin = (raw: number) => {
+    const v = Math.min(raw, sMax);
+    onChangeMin(v <= sliderMin ? undefined : v);
+  };
+  const commitMax = (raw: number) => {
+    const v = Math.max(raw, sMin);
+    onChangeMax(v >= sliderMax ? undefined : v);
+  };
+
+  const minOnTop = sMin > (sliderMin + sliderMax) / 2;
+
   return (
-    <div className="range-inputs-row">
-      <input type="number" className="range-input" placeholder={minPlaceholder} disabled={disabled}
-        aria-label={`${ariaLabel} min`}
-        value={localMin} onChange={e => setLocalMin(e.target.value)}
-        onBlur={e => onChangeMin(e.target.value !== "" ? Number(e.target.value) : undefined)} />
-      <span className="range-inputs-sep">–</span>
-      <input type="number" className="range-input" placeholder={maxPlaceholder} disabled={disabled}
-        aria-label={`${ariaLabel} max`}
-        value={localMax} onChange={e => setLocalMax(e.target.value)}
-        onBlur={e => onChangeMax(e.target.value !== "" ? Number(e.target.value) : undefined)} />
+    <div className="range-filter">
+      <div className={`range-slider${disabled ? " disabled" : ""}`}>
+        <div className="range-slider-rail" />
+        <div className="range-slider-fill" style={{ left: `${pct(sMin)}%`, right: `${100 - pct(sMax)}%` }} />
+        <input type="range" className="range-slider-input"
+          style={{ zIndex: minOnTop ? 5 : 3 }}
+          min={sliderMin} max={sliderMax} step={step} value={sMin} disabled={disabled}
+          aria-label={`${ariaLabel} min`}
+          onChange={e => commitMin(Number(e.target.value))} />
+        <input type="range" className="range-slider-input"
+          style={{ zIndex: 4 }}
+          min={sliderMin} max={sliderMax} step={step} value={sMax} disabled={disabled}
+          aria-label={`${ariaLabel} max`}
+          onChange={e => commitMax(Number(e.target.value))} />
+      </div>
+      <div className="range-inputs-row">
+        <input type="number" className="range-input" placeholder={minPlaceholder} disabled={disabled}
+          aria-label={`${ariaLabel} min`}
+          value={localMin} onChange={e => setLocalMin(e.target.value)}
+          onBlur={e => onChangeMin(e.target.value !== "" ? Number(e.target.value) : undefined)} />
+        <span className="range-inputs-sep">–</span>
+        <input type="number" className="range-input" placeholder={maxPlaceholder} disabled={disabled}
+          aria-label={`${ariaLabel} max`}
+          value={localMax} onChange={e => setLocalMax(e.target.value)}
+          onBlur={e => onChangeMax(e.target.value !== "" ? Number(e.target.value) : undefined)} />
+      </div>
     </div>
   );
 }
@@ -130,6 +169,7 @@ export default function Sidebar({ filters, setFilters, defaultLimit, resetKey, b
 
       <SidebarSection key={`Price-${resetKey}`} title={t("filter_price")}>
         <RangeInputs ariaLabel={t("filter_price")} unit="€"
+          sliderMin={PRICE_BOUNDS.min} sliderMax={PRICE_BOUNDS.max} step={PRICE_BOUNDS.step}
           minVal={filters.min_price} maxVal={filters.max_price}
           onChangeMin={v => setFilters(f => ({ ...f, min_price: v }))}
           onChangeMax={v => setFilters(f => ({ ...f, max_price: v }))}
@@ -138,6 +178,7 @@ export default function Sidebar({ filters, setFilters, defaultLimit, resetKey, b
 
       <SidebarSection key={`Year-${resetKey}`} title={t("filter_year")}>
         <RangeInputs ariaLabel={t("filter_year")}
+          sliderMin={YEAR_BOUNDS.min} sliderMax={YEAR_BOUNDS.max} step={YEAR_BOUNDS.step}
           minVal={filters.min_year} maxVal={filters.max_year}
           onChangeMin={v => setFilters(f => ({ ...f, min_year: v }))}
           onChangeMax={v => setFilters(f => ({ ...f, max_year: v }))}
@@ -146,6 +187,7 @@ export default function Sidebar({ filters, setFilters, defaultLimit, resetKey, b
 
       <SidebarSection key={`Mileage-${resetKey}`} title={t("filter_mileage")}>
         <RangeInputs ariaLabel={t("filter_mileage")} unit="km"
+          sliderMin={MILEAGE_BOUNDS.min} sliderMax={MILEAGE_BOUNDS.max} step={MILEAGE_BOUNDS.step}
           minVal={filters.min_mileage} maxVal={filters.max_mileage}
           disabled={filters.new_only}
           onChangeMin={v => setFilters(f => ({ ...f, min_mileage: v }))}
