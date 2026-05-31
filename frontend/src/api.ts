@@ -77,7 +77,7 @@ export async function fetchListings(filters: ListingFilters = {}): Promise<Listi
 export async function fetchListingsByIds(ids: number[]): Promise<Listing[]> {
   if (ids.length === 0) return [];
   const { data, error } = await supabase
-    .from("listings_with_delta")
+    .from("listings_with_delta_all")
     .select("*")
     .in("id", ids);
   if (error) throw new Error(error.message);
