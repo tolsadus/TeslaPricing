@@ -13,13 +13,15 @@
   gap: 0.15rem;
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 0.15rem;
+  border-radius: 999px;
+  height: 40px;
+  padding: 0.15rem 0.35rem;
+  flex-shrink: 0;
 }
 .lang-toggle button {
   background: none;
   border: none;
-  border-radius: 6px;
+  border-radius: 999px;
   padding: 0.2rem 0.35rem;
   font-size: 1rem;
   cursor: pointer;
@@ -394,7 +396,11 @@ html, body {
   justify-self: center;
 }
 .nav-link {
-  padding: 0.4rem 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  height: 40px;
+  padding: 0 0.9rem;
   border-radius: 999px;
   font-size: 0.82rem;
   font-weight: 500;
@@ -410,8 +416,8 @@ html, body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 40px;
+  height: 40px;
   margin-left: 0.5rem;
   padding: 0;
   border: 1px solid var(--border);
@@ -1207,6 +1213,10 @@ html, body {
 .btn-secondary:hover {
   background: var(--chip-bg);
   border-color: var(--accent);
+}
+.extension-link {
+  flex: 0 0 auto;
+  gap: 0.4rem;
 }
 button.btn { font-family: inherit; }
 .source-filter-btn.active {
@@ -2377,8 +2387,9 @@ details.auction-group[open] > summary::before { transform: rotate(90deg); }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
   padding: 0;
   border: 1px solid var(--border);
   background: var(--bg-elev);

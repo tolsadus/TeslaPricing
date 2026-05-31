@@ -10,6 +10,7 @@ const DRIVETRAINS = ["RWD", "AWD", "Performance", "Plaid"] as const;
 const AUTOPILOTS = ["EAP", "FSD"] as const;
 const SEATS_OPTIONS = [5, 6, 7] as const;
 const COLOR_FAMILIES = ["Noir", "Blanc", "Gris", "Bleu", "Rouge"] as const;
+export const COLOR_LABEL_KEY = { Noir: "color_noir", Blanc: "color_blanc", Gris: "color_gris", Bleu: "color_bleu", Rouge: "color_rouge" } as const;
 
 const PRICE_BOUNDS = { min: 0, max: 200000, step: 1000 };
 const YEAR_BOUNDS = { min: 2008, max: new Date().getFullYear(), step: 1 };
@@ -249,7 +250,7 @@ export default function Sidebar({ filters, setFilters, defaultLimit, resetKey, b
             return (
               <button key={c} type="button" aria-pressed={isActive}
                 className={`chip-btn ${isActive ? "active" : ""}`}
-                onClick={() => setFilters((f) => ({ ...f, color_family: f.color_family === c ? undefined : c }))}>{c}</button>
+                onClick={() => setFilters((f) => ({ ...f, color_family: f.color_family === c ? undefined : c }))}>{t(COLOR_LABEL_KEY[c])}</button>
             );
           })}
         </div>
