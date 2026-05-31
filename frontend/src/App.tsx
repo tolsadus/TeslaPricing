@@ -11,7 +11,7 @@ import Details from "./Details";
 import Saved from "./Saved";
 import Compare from "./Compare";
 import MapView from "./Map";
-import Sidebar from "./Sidebar";
+import Sidebar, { COLOR_LABEL_KEY } from "./Sidebar";
 import SearchBar from "./SearchBar";
 import ImgWithFallback from "./ImgWithFallback";
 import { useSaved } from "./useSaved";
@@ -356,6 +356,16 @@ export default function App() {
           {page === "detail" ? t("nav_listings") : page === "trends" ? t("nav_trends") : `${totalCount ?? "…"} ${t("nav_inventory")}`}
         </div>
         <div className="topbar-auth">
+          <a className="btn btn-secondary extension-link" href="https://chromewebstore.google.com/detail/tesla-price-history/mchiolkjdnabmjboojigecfmegloobia" target="_blank" rel="noopener noreferrer">
+            <svg viewBox="0 0 190.5 190.5" width="16" height="16" aria-hidden="true">
+              <path fill="#fff" d="M95.252 142.873c26.304 0 47.627-21.324 47.627-47.628 0-26.304-21.323-47.627-47.627-47.627-26.304 0-47.627 21.323-47.627 47.627 0 26.304 21.323 47.628 47.627 47.628z" />
+              <path fill="#229342" d="m54.005 119.07-41.24-71.43a95.227 95.227 0 0 0-12.756 47.683 95.227 95.227 0 0 0 95.238 95.25 95.227 95.227 0 0 0 8.563-.388l41.231-71.422v-.009a47.613 47.613 0 0 1-41.232 23.829 47.613 47.613 0 0 1-49.804-23.513z" />
+              <path fill="#fbc116" d="m136.482 119.067-41.23 71.422a95.227 95.227 0 0 0 82.479-47.643 95.227 95.227 0 0 0 .011-95.246h-82.492l-.008.007a47.613 47.613 0 0 1 41.245 23.811 47.613 47.613 0 0 1-.005 47.649z" />
+              <path fill="#1a73e8" d="M95.252 132.961a37.714 37.714 0 0 1-37.714-37.713 37.714 37.714 0 0 1 37.714-37.714 37.714 37.714 0 0 1 37.713 37.714 37.714 37.714 0 0 1-37.713 37.713z" />
+              <path fill="#e33b2e" d="m95.252 47.627h82.49a95.227 95.227 0 0 0-82.493-47.627 95.227 95.227 0 0 0-82.489 47.643l41.232 71.422.009.004a47.613 47.613 0 0 1 41.251-71.442z" />
+            </svg>
+            {t("get_extension")}
+          </a>
           <div className="lang-toggle">
             <button className={lang === "en" ? "active" : ""} onClick={() => setLang("en")} title="English">🇬🇧</button>
             <button className={lang === "fr" ? "active" : ""} onClick={() => setLang("fr")} title="Français">🇫🇷</button>
@@ -431,7 +441,7 @@ export default function App() {
                     <button className="active-tag-chip" onClick={() => setFilters((f) => ({ ...f, seats: undefined }))}>{filters.seats} {t("chip_seats")} ✕</button>
                   )}
                   {filters.color_family && (
-                    <button className="active-tag-chip" onClick={() => setFilters((f) => ({ ...f, color_family: undefined }))}>{filters.color_family} ✕</button>
+                    <button className="active-tag-chip" onClick={() => setFilters((f) => ({ ...f, color_family: undefined }))}>{t(COLOR_LABEL_KEY[filters.color_family as keyof typeof COLOR_LABEL_KEY])} ✕</button>
                   )}
                 </div>
               )}
