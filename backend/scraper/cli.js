@@ -131,7 +131,7 @@ program
 program
   .command('tesla')
   .description('Scrape Tesla inventory')
-  .option('--models <list>', 'comma-separated models (m3,my,ms,mx)', 'm3,my,ms,mx')
+  .option('--models <list>', 'comma-separated models (m3,my,ms,mx,ct)', 'm3,my,ms,mx,ct')
   .option('--markets <list>', 'comma-separated markets, or "all" for every supported market', 'fr')
   .option('--concurrency <n>', 'markets to scrape in parallel', v => parseInt(v, 10), 5)
   .action(async ({ models, markets, concurrency }) => {
