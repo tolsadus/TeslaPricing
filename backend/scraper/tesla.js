@@ -2,9 +2,9 @@
 
 const createTeslaInventory = require('tesla-inventory')
 
-const MODELS = ['m3', 'my', 'ms', 'mx']
+const MODELS = ['m3', 'my', 'ms', 'mx', 'ct']
 const CONDITIONS = ['new', 'used']
-const MODEL_NAMES = { m3: 'Model 3', my: 'Model Y', ms: 'Model S', mx: 'Model X' }
+const MODEL_NAMES = { m3: 'Model 3', my: 'Model Y', ms: 'Model S', mx: 'Model X', ct: 'Cybertruck' }
 const CABIN_SEATS = { FIVE: 5, SEVEN: 7, SIX: 6, FOUR: 4 }
 
 // market key (CLI alias) -> { inventory key for tesla-inventory lib, language, market code, currency }
