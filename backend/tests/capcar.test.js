@@ -37,6 +37,14 @@ test('parseHit: parses a full Tesla Model 3 hit', () => {
   assert.equal(listing.location, 'Paris, 75')
   assert.match(listing.url, /capcar\.fr\/voiture-occasion\/model-3\/CAP-12345/)
   assert.equal(listing.image_url, 'https://res.cloudinary.com/lghaauto/image/upload/abc/def.jpg')
+  assert.equal(listing.is_sold, false)
+})
+
+test('parseHit: flags reserved and sold listings via state', () => {
+  assert.equal(parseHit({ reference: 'X1', state: 'FOR_SALE' }).is_sold, false)
+  assert.equal(parseHit({ reference: 'X2', state: 'RESERVED' }).is_sold, true)
+  assert.equal(parseHit({ reference: 'X3', state: 'SOLD' }).is_sold, true)
+  assert.equal(parseHit({ reference: 'X4' }).is_sold, false)
 })
 
 test('parseHit: returns null for missing reference', () => {

@@ -56,6 +56,7 @@ function parseHit(hit) {
     location,
     url: listingUrl(version, reference),
     image_url: imageUrl(hit.imageId),
+    is_sold: hit.state ? hit.state !== 'FOR_SALE' : false,
     _photos: [],
   }
 }
