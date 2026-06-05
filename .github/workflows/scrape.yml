@@ -22,8 +22,38 @@ on:
           - ewigo
 
 jobs:
-  scrape:
+  setup:
     runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.gen.outputs.matrix }}
+    steps:
+      - id: gen
+        env:
+          ONLY: ${{ inputs.scraper }}
+        run: |
+          all='[
+            {"scraper":"capcar","args":"--pages 20"},
+            {"scraper":"gmecars","args":"--pages 2"},
+            {"scraper":"lbauto","args":"--pages 10"},
+            {"scraper":"heycar","args":""},
+            {"scraper":"renew","args":"--pages 5"},
+            {"scraper":"mmxbv","args":""},
+            {"scraper":"nikola","args":""},
+            {"scraper":"ewigo","args":""}
+          ]'
+          if [ -z "$ONLY" ]; then
+            matrix=$(echo "$all" | jq -c '{include: .}')
+          else
+            matrix=$(echo "$all" | jq -c --arg s "$ONLY" '{include: [.[] | select(.scraper == $s)]}')
+          fi
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+
+  scrape:
+    needs: setup
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.setup.outputs.matrix) }}
     defaults:
       run:
         working-directory: backend
@@ -40,50 +70,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run capcar
-        if: inputs.scraper == '' || inputs.scraper == 'capcar'
-        run: node scraper/cli.js capcar --pages 20
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
-      - name: Run gmecars
-        if: inputs.scraper == '' || inputs.scraper == 'gmecars'
-        run: node scraper/cli.js gmecars --pages 2
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
-      - name: Run lbauto
-        if: inputs.scraper == '' || inputs.scraper == 'lbauto'
-        run: node scraper/cli.js lbauto --pages 10
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
-      - name: Run heycar
-        if: inputs.scraper == '' || inputs.scraper == 'heycar'
-        run: node scraper/cli.js heycar
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
-      - name: Run renew
-        if: inputs.scraper == '' || inputs.scraper == 'renew'
-        run: node scraper/cli.js renew --pages 5
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
-      - name: Run mmxbv
-        if: inputs.scraper == '' || inputs.scraper == 'mmxbv'
-        run: node scraper/cli.js mmxbv
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
-      - name: Run nikola
-        if: inputs.scraper == '' || inputs.scraper == 'nikola'
-        run: node scraper/cli.js nikola
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
-      - name: Run ewigo
-        if: inputs.scraper == '' || inputs.scraper == 'ewigo'
-        run: node scraper/cli.js ewigo
+      - name: Run ${{ matrix.scraper }}
+        run: node scraper/cli.js ${{ matrix.scraper }} ${{ matrix.args }}
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
