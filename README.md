@@ -1,8 +1,17 @@
 # TeslaPricing
 
+[![CI](https://github.com/tolsadus/TeslaPricing/actions/workflows/ci.yml/badge.svg)](https://github.com/tolsadus/TeslaPricing/actions/workflows/ci.yml)
 [![Scrape](https://github.com/tolsadus/TeslaPricing/actions/workflows/scrape.yml/badge.svg)](https://github.com/tolsadus/TeslaPricing/actions/workflows/scrape.yml)
 ![Last Scrape](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.github.com%2Frepos%2Ftolsadus%2FTeslaPricing%2Factions%2Fworkflows%2Fscrape.yml%2Fruns%3Fstatus%3Dsuccess%26per_page%3D1&query=%24.workflow_runs%5B0%5D.updated_at&label=last%20scrape&color=green)
 [![Deploy to GitHub Pages](https://github.com/tolsadus/TeslaPricing/actions/workflows/deploy.yml/badge.svg)](https://github.com/tolsadus/TeslaPricing/actions/workflows/deploy.yml)
+
+![Node](https://img.shields.io/badge/Node.js-26-339933?logo=node.js&logoColor=white)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-3FCF8E?logo=supabase&logoColor=white)
+[![Built with Claude Code](https://img.shields.io/badge/Built%20with-Claude%20Code-D97757?logo=claude&logoColor=white)](https://claude.com/claude-code)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 
 Aggregated Tesla used-car listings scraped from multiple French marketplaces. React frontend backed directly by Supabase, with a Node.js scraper suite.
 
