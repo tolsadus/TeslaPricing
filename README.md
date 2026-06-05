@@ -39,9 +39,22 @@ Aggregated Tesla used-car listings scraped from multiple French marketplaces. Re
 
 ## Stack
 
-- **Backend** — Node.js 26, Playwright (stealth), Supabase (PostgreSQL)
-- **Frontend** — React 19, TypeScript, Vite 8, Supabase JS client
-- **Hosting** — GitHub Pages (frontend), Supabase (database)
+- **Backend (scraper suite)** — Node.js 26 (ESM)
+  - `commander` — CLI argument parsing (`scraper/cli.js`)
+  - `playwright` + `playwright-extra` + `puppeteer-extra-plugin-stealth` — headless browser scraping with bot-detection evasion (Leboncoin, AramisAuto, La Centrale)
+  - `tesla-inventory` — Tesla new/used inventory API client
+  - `pg` — direct PostgreSQL access to the Supabase database
+  - `p-retry` — retry logic for flaky requests
+  - `cli-progress`, `debug` / `debug-logfmt`, `dotenv` — progress bars, logging, env config
+- **Frontend (web app)** — React 19 + React DOM 19, TypeScript 5.6
+  - `vite` 8 + `@vitejs/plugin-react` — build tooling and dev server
+  - `@supabase/supabase-js` — direct client-side reads, auth (Google sign-in), and watchlist/hidden sync
+  - `leaflet` + `react-leaflet` + `leaflet.markercluster` — map view with clustered dealer markers
+- **Database** — Supabase (PostgreSQL)
+- **CI/CD** — GitHub Actions
+  - `ci.yml` — lint/test on push
+  - `scrape.yml` — scheduled scraping (runner-IP-blocked sources excluded)
+  - `deploy.yml` — build and deploy the frontend to GitHub Pages on every push to `main`
 
 ## Setup
 
