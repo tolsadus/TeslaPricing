@@ -59,7 +59,11 @@ export type DroppedListing = {
   url: string;
   image_url: string | null;
   dropped_at: string;
+  currency: string | null;
+  market: string | null;
 };
+
+export type Market = { market: string; currency: string | null; n: number };
 
 export type PricePoint = {
   price: number | null;

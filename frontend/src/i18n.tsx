@@ -45,7 +45,7 @@ const en = {
   sort_mileage_desc: "Mileage (high to low)",
   sort_year_newest: "Year (newest)",
   sort_year_oldest: "Year (oldest)",
-  sort_biggest_drop_eur: "Biggest drop (€)",
+  sort_biggest_drop: "Biggest drop",
   sort_biggest_drop_pct: "Biggest drop (%)",
   // Cards
   card_view: "View",
@@ -239,7 +239,7 @@ const fr: Record<TKey, string> = {
   sort_mileage_desc: "Km décroissant",
   sort_year_newest: "Année (récente)",
   sort_year_oldest: "Année (ancienne)",
-  sort_biggest_drop_eur: "Meilleure baisse (€)",
+  sort_biggest_drop: "Meilleure baisse",
   sort_biggest_drop_pct: "Meilleure baisse (%)",
   // Cards
   card_view: "Voir",

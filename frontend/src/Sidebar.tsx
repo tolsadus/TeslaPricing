@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "./i18n";
 import { getCountryByCode } from "./utils";
-import { fetchMarkets } from "./api";
-import type { ListingFilters } from "./types";
+import type { ListingFilters, Market } from "./types";
 
 const MODELS = ["Model S", "Model 3", "Model X", "Model Y", "Cybertruck", "Roadster"] as const;
 const SOURCES = ["tesla", "leboncoin", "lacentrale", "capcar", "lbauto", "aramisauto", "gmecars", "renew", "heycar", "alcopa", "mmxbv", "nikola", "ewigo"] as const;
@@ -103,15 +102,11 @@ type SidebarProps = {
   showHidden?: boolean;
   onToggleHidden?: () => void;
   onClearHidden?: () => void;
+  markets: Market[];
 };
 
-export default function Sidebar({ filters, setFilters, defaultLimit, resetKey, bumpResetKey, hiddenCount = 0, showHidden = false, onToggleHidden, onClearHidden }: SidebarProps) {
+export default function Sidebar({ filters, setFilters, defaultLimit, resetKey, bumpResetKey, hiddenCount = 0, showHidden = false, onToggleHidden, onClearHidden, markets }: SidebarProps) {
   const { t } = useTranslation();
-  const [markets, setMarkets] = useState<string[]>([]);
-
-  useEffect(() => {
-    fetchMarkets().then((rows) => setMarkets(rows.map((r) => r.market))).catch(() => {});
-  }, []);
 
   return (
     <aside className="sidebar">
@@ -143,6 +138,17 @@ export default function Sidebar({ filters, setFilters, defaultLimit, resetKey, b
           </button>
         )}
       </div>
+
+      <SidebarSection title={t("filter_country")}>
+        <select className="country-select" value={filters.country ?? ""}
+          onChange={(e) => setFilters((f) => ({ ...f, country: e.target.value || undefined }))}>
+          <option value="">{t("filter_all")}</option>
+          {markets.map((m) => {
+            const info = getCountryByCode(m.market);
+            return <option key={m.market} value={m.market}>{info ? `${info.flag} ${info.name}` : m.market}</option>;
+          })}
+        </select>
+      </SidebarSection>
 
       <div className="sidebar-section model-block">
         <div className="model-block-header">
@@ -259,17 +265,6 @@ export default function Sidebar({ filters, setFilters, defaultLimit, resetKey, b
             );
           })}
         </div>
-      </SidebarSection>
-
-      <SidebarSection title={t("filter_country")}>
-        <select className="country-select" value={filters.country ?? ""}
-          onChange={(e) => setFilters((f) => ({ ...f, country: e.target.value || undefined }))}>
-          <option value="">{t("filter_all")}</option>
-          {markets.map((c) => {
-            const info = getCountryByCode(c);
-            return <option key={c} value={c}>{info ? `${info.flag} ${info.name}` : c}</option>;
-          })}
-        </select>
       </SidebarSection>
 
       <SidebarSection title={t("filter_source")}>

@@ -115,10 +115,10 @@ export async function fetchCount(filters: ListingFilters = {}): Promise<number> 
   return count ?? 0;
 }
 
-export async function fetchMarkets(): Promise<{ market: string; n: number }[]> {
+export async function fetchMarkets(): Promise<{ market: string; currency: string | null; n: number }[]> {
   const { data, error } = await supabase.rpc("get_markets");
   if (error) throw new Error(error.message);
-  return (data ?? []) as { market: string; n: number }[];
+  return (data ?? []) as { market: string; currency: string | null; n: number }[];
 }
 
 export async function fetchStats(): Promise<{ total: number; by_source: Record<string, number> }> {
@@ -219,8 +219,8 @@ export async function fetchModelCounts(models: readonly string[]): Promise<Recor
   return Object.fromEntries(models.map((m, i) => [m, counts[i]]));
 }
 
-export async function fetchRecentDrops(hours = 48): Promise<DroppedListing[]> {
-  const { data, error } = await supabase.rpc("get_recent_drops", { hours });
+export async function fetchRecentDrops(hours = 48, market?: string): Promise<DroppedListing[]> {
+  const { data, error } = await supabase.rpc("get_recent_drops", { hours, p_market: market ?? null });
   if (error) throw new Error(error.message);
   return (data ?? []) as DroppedListing[];
 }

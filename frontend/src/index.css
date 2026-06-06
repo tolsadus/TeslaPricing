@@ -1010,28 +1010,32 @@ html, body {
 .badge-clickable:hover { opacity: 1; outline: 2px solid currentColor; outline-offset: 1px; }
 .badge-active { outline: 2px solid currentColor; outline-offset: 1px; cursor: pointer; }
 .sort-bar {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.6rem 0.8rem;
+  display: block;
   margin-bottom: 1.25rem;
 }
 .sort-bar-options {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.35rem;
+  gap: 0.5rem;
 }
 .sort-bar-btn {
   appearance: none;
   font-family: inherit;
-  background: transparent;
+  flex: 1 1 auto;
+  background: var(--surface);
   border: 1px solid var(--border);
   color: var(--text-dim);
   font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
-  padding: 0.4rem 0.85rem;
-  border-radius: 999px;
+  padding: 0.6rem 0.85rem;
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  white-space: nowrap;
+  border-radius: 10px;
   transition: background 0.12s, color 0.12s, border-color 0.12s;
 }
 .sort-bar-btn:hover {
@@ -1039,9 +1043,9 @@ html, body {
   border-color: var(--text-mute);
 }
 .sort-bar-btn.active {
-  background: var(--text);
-  color: var(--bg);
-  border-color: var(--text);
+  background: var(--chip-bg);
+  color: var(--text);
+  border-color: transparent;
 }
 .sort-bar-btn:focus-visible {
   outline: 2px solid var(--text);
@@ -1566,6 +1570,13 @@ code {
   color: var(--text-dim);
   font-size: 0.9rem;
 }
+.dropped-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.dropped-controls .country-select { width: auto; }
 .dropped-window-tabs {
   display: flex;
   gap: 0.4rem;

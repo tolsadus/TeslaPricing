@@ -31,6 +31,13 @@ export function formatPrice(value: number | null, currency: string | null = "EUR
   return new Intl.NumberFormat(locale, { style: "currency", currency: currency || "EUR", maximumFractionDigits: 0 }).format(value);
 }
 
+// The currency symbol alone (e.g. "€", "$", "£") for the given ISO currency code.
+export function currencySymbol(currency: string | null, locale = "fr-FR"): string {
+  const code = currency || "EUR";
+  const parts = new Intl.NumberFormat(locale, { style: "currency", currency: code, maximumFractionDigits: 0 }).formatToParts(0);
+  return parts.find((p) => p.type === "currency")?.value ?? code;
+}
+
 export function formatMileage(km: number | null, market: string | null = null, locale = "fr-FR"): string {
   if (km == null) return "—";
   if (market && MILE_MARKETS.has(market.toUpperCase())) {

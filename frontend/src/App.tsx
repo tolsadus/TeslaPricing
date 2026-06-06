@@ -2,7 +2,7 @@ declare const __GIT_BRANCH__: string;
 declare const __GIT_COMMIT__: string;
 
 import { useEffect, useRef, useState } from "react";
-import { fetchListings, fetchListingsByIds, fetchStats } from "./api";
+import { fetchListings, fetchListingsByIds, fetchStats, fetchMarkets } from "./api";
 import ListingDetail from "./ListingDetail";
 import Trends from "./Trends";
 import Dropped from "./Dropped";
@@ -20,8 +20,8 @@ import { useCompare } from "./useCompare";
 import { usePinned } from "./usePinned";
 import { useAuth } from "./useAuth";
 import { useTranslation } from "./i18n";
-import type { Listing, ListingFilters } from "./types";
-import { getDrivetrain, DRIVETRAIN_LABEL, formatFuel, getCountry, getCountryByCode, formatPrice, formatMileage } from "./utils";
+import type { Listing, ListingFilters, Market } from "./types";
+import { getDrivetrain, DRIVETRAIN_LABEL, formatFuel, getCountry, getCountryByCode, formatPrice, formatMileage, currencySymbol } from "./utils";
 
 const SHOW_ADS = false;
 
@@ -51,11 +51,26 @@ function useHashRoute(): string {
   return hash;
 }
 
-function SortBar({ filters, setFilters }: {
+function SortBar({ filters, setFilters, markets }: {
   filters: ListingFilters;
   setFilters: (f: ListingFilters | ((prev: ListingFilters) => ListingFilters)) => void;
+  markets: Market[];
 }) {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
+  const locale = lang === "fr" ? "fr-FR" : "en-GB";
+  const selectedCurrency = filters.country
+    ? markets.find((m) => m.market === filters.country)?.currency ?? null
+    : null;
+
+  // Sorting by absolute drop amount only makes sense within a single currency,
+  // so that option is offered only when one country is selected. Reset away from
+  // it if the country filter is cleared.
+  useEffect(() => {
+    if (!filters.country && filters.sort_by === "price_delta") {
+      setFilters((f) => ({ ...f, sort_by: "scraped_at", sort_dir: "desc" }));
+    }
+  }, [filters.country, filters.sort_by]);
+
   const options = [
     { label: t("sort_latest"),           sort_by: "scraped_at" as const, sort_dir: "desc" as const },
     { label: t("sort_price_asc"),        sort_by: "price"      as const, sort_dir: "asc"  as const },
@@ -64,7 +79,9 @@ function SortBar({ filters, setFilters }: {
     { label: t("sort_mileage_desc"),     sort_by: "mileage_km" as const, sort_dir: "desc" as const },
     { label: t("sort_year_newest"),      sort_by: "year"       as const, sort_dir: "desc" as const },
     { label: t("sort_year_oldest"),      sort_by: "year"       as const, sort_dir: "asc"  as const },
-    { label: t("sort_biggest_drop_eur"), sort_by: "price_delta" as const, sort_dir: "desc" as const },
+    ...(filters.country
+      ? [{ label: `${t("sort_biggest_drop")} (${currencySymbol(selectedCurrency, locale)})`, sort_by: "price_delta" as const, sort_dir: "desc" as const }]
+      : []),
     { label: t("sort_biggest_drop_pct"), sort_by: "drop_pct"    as const, sort_dir: "desc" as const },
   ];
   const currentKey = `${filters.sort_by ?? "scraped_at"}:${filters.sort_dir ?? "desc"}`;
@@ -200,7 +217,10 @@ export default function App() {
   const { ids: compareIds, toggle: toggleCompare, clear: clearCompare, isComparing } = useCompare();
   const { pinned, toggle: togglePin, isPinned } = usePinned(user);
   const [pinnedListings, setPinnedListings] = useState<Listing[]>([]);
+  const [markets, setMarkets] = useState<Market[]>([]);
   const sentinelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => { fetchMarkets().then(setMarkets).catch(() => {}); }, []);
 
   // Pinned listings are fetched by id so they stay at the top regardless of filters/sort.
   useEffect(() => {
@@ -406,6 +426,7 @@ export default function App() {
             defaultLimit={LIMIT}
             resetKey={sectionResetKey}
             bumpResetKey={() => setSectionResetKey(k => k + 1)}
+            markets={markets}
           />
           <main className="grid-wrap">
             <MapView filters={filters} />
@@ -424,11 +445,12 @@ export default function App() {
               showHidden={showHidden}
               onToggleHidden={() => setShowHidden((v) => !v)}
               onClearHidden={clearHidden}
+              markets={markets}
             />
 
             {/* ── Main grid ── */}
             <main className="grid-wrap">
-              <SortBar filters={filters} setFilters={setFilters} />
+              <SortBar filters={filters} setFilters={setFilters} markets={markets} />
               {(filters.drivetrain || filters.autopilot || filters.seats || filters.color_family) && (
                 <div className="active-tag-filters">
                   {filters.drivetrain && (

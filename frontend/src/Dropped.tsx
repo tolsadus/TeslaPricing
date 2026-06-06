@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { fetchRecentDrops } from "./api";
-import type { DroppedListing } from "./types";
-import { getDrivetrain, DRIVETRAIN_LABEL } from "./utils";
+import { fetchRecentDrops, fetchMarkets } from "./api";
+import type { DroppedListing, Market } from "./types";
+import { getDrivetrain, DRIVETRAIN_LABEL, getCountryByCode, formatPrice, formatMileage } from "./utils";
 import { useTranslation } from "./i18n";
 import { useAuth } from "./useAuth";
 import ImgWithFallback from "./ImgWithFallback";
@@ -15,25 +15,18 @@ type Props = {
   onSignIn: () => void;
 };
 
-function formatPrice(v: number | null): string {
-  if (v === null) return "—";
-  return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(v);
-}
-
-function formatKm(v: number | null): string {
-  if (v === null) return "—";
-  return `${new Intl.NumberFormat("fr-FR").format(v)} km`;
-}
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" });
+function formatDate(iso: string, locale: string): string {
+  return new Date(iso).toLocaleDateString(locale, { day: "2-digit", month: "short", year: "numeric" });
 }
 
 export default function Dropped({ isSaved, toggle, isComparing, toggleCompare, compareCount }: Props) {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
+  const locale = lang === "fr" ? "fr-FR" : "en-GB";
   const { user, signInWithGoogle } = useAuth();
   const [drops, setDrops] = useState<DroppedListing[]>([]);
   const [hours, setHours] = useState(48);
+  const [country, setCountry] = useState("FR");
+  const [markets, setMarkets] = useState<Market[]>([]);
   const [loading, setLoading] = useState(true);
 
   const WINDOWS = [
@@ -42,12 +35,14 @@ export default function Dropped({ isSaved, toggle, isComparing, toggleCompare, c
     { label: t("dropped_7d"), hours: 168 },
   ];
 
+  useEffect(() => { fetchMarkets().then(setMarkets).catch(() => {}); }, []);
+
   useEffect(() => {
     setLoading(true);
-    fetchRecentDrops(hours)
+    fetchRecentDrops(hours, country)
       .then(setDrops)
       .finally(() => setLoading(false));
-  }, [hours]);
+  }, [hours, country]);
 
   return (
     <div className="dropped-page">
@@ -56,16 +51,25 @@ export default function Dropped({ isSaved, toggle, isComparing, toggleCompare, c
           <h2 className="dropped-title">{t("dropped_title")}</h2>
           <p className="dropped-subtitle">{t("dropped_subtitle")}</p>
         </div>
-        <div className="dropped-window-tabs">
-          {WINDOWS.map((w) => (
-            <button
-              key={w.hours}
-              className={`window-tab ${hours === w.hours ? "active" : ""}`}
-              onClick={() => setHours(w.hours)}
-            >
-              {w.label}
-            </button>
-          ))}
+        <div className="dropped-controls">
+          <select className="country-select" value={country}
+            onChange={(e) => setCountry(e.target.value)}>
+            {markets.map((m) => {
+              const info = getCountryByCode(m.market);
+              return <option key={m.market} value={m.market}>{info ? `${info.flag} ${info.name}` : m.market}</option>;
+            })}
+          </select>
+          <div className="dropped-window-tabs">
+            {WINDOWS.map((w) => (
+              <button
+                key={w.hours}
+                className={`window-tab ${hours === w.hours ? "active" : ""}`}
+                onClick={() => setHours(w.hours)}
+              >
+                {w.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -88,7 +92,7 @@ export default function Dropped({ isSaved, toggle, isComparing, toggleCompare, c
                 <button className={`bookmark-btn${isSaved(d.id) ? " active" : ""}`} onClick={() => toggle(d.id)} aria-label="Save">🔖</button>
                 <button className={`compare-btn${isComparing(d.id) ? " active" : ""}${compareCount >= 3 && !isComparing(d.id) ? " disabled" : ""}`} onClick={() => { if (compareCount < 3 || isComparing(d.id)) toggleCompare(d.id); }} aria-label="Compare">⊕</button>
                 <div className="dropped-drop-badge">
-                  −{formatPrice(d.drop_amount)}
+                  −{formatPrice(d.drop_amount, d.currency, locale)}
                   <span className="dropped-pct">−{d.drop_pct}%</span>
                 </div>
                 {rank !== undefined && <span className="dropped-medal">{MEDALS[rank]}</span>}
@@ -97,12 +101,12 @@ export default function Dropped({ isSaved, toggle, isComparing, toggleCompare, c
                 <h3 className="dropped-name">{d.title}</h3>
                 {dt && <span className={`drivetrain-badge dt-${dt.toLowerCase()}`}>{DRIVETRAIN_LABEL[dt] ?? dt}</span>}
                 <div className="dropped-prices">
-                  <span className="dropped-new-price">{formatPrice(d.price)}</span>
-                  <span className="dropped-old-price"><s>{formatPrice(d.old_price)}</s></span>
+                  <span className="dropped-new-price">{formatPrice(d.price, d.currency, locale)}</span>
+                  <span className="dropped-old-price"><s>{formatPrice(d.old_price, d.currency, locale)}</s></span>
                 </div>
-                <p className="meta">{d.year ?? "—"} · {formatKm(d.mileage_km)} · {d.fuel ?? "—"}</p>
+                <p className="meta">{d.year ?? "—"} · {formatMileage(d.mileage_km, d.market, locale)} · {d.fuel ?? "—"}</p>
                 <p className="location">{d.location ?? ""}</p>
-                <p className="scraped-at">{t("dropped_label")} {formatDate(d.dropped_at)}</p>
+                <p className="scraped-at">{t("dropped_label")} {formatDate(d.dropped_at, locale)}</p>
                 <div className="cta-row">
                   <a className="btn btn-primary" href={`#/listing/${d.id}`}>{t("dropped_view")}</a>
                   <span className="btn btn-secondary">{d.source}</span>
