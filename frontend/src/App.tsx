@@ -319,9 +319,9 @@ export default function App() {
         <div className="card-badges">
           {(() => { const dt = (listing.drivetrain as keyof typeof DRIVETRAIN_LABEL | null) ?? getDrivetrain(listing); return dt ? <span className={`drivetrain-badge dt-${dt.toLowerCase()}${filters.drivetrain === dt ? " badge-active" : " badge-clickable"}`} onClick={() => setFilters((f) => ({ ...f, drivetrain: f.drivetrain === dt ? undefined : dt }))}>{DRIVETRAIN_LABEL[dt] ?? dt}</span> : null; })()}
           {listing.autopilot && <span className={`autopilot-badge ap-${listing.autopilot.toLowerCase()}${filters.autopilot === listing.autopilot ? " badge-active" : " badge-clickable"}`} onClick={() => setFilters((f) => ({ ...f, autopilot: f.autopilot === listing.autopilot ? undefined : listing.autopilot! }))}>{listing.autopilot}</span>}
-          {(() => { const c = getCountryByCode(listing.market) ?? getCountry(listing.source); return c ? <span className={`country-badge country-${c.code.toLowerCase()}`} title={c.name}>{c.flag} {c.code}</span> : null; })()}
+          {(() => { const c = getCountryByCode(listing.market, locale) ?? getCountry(listing.source); if (!c) return null; const name = getCountryByCode(c.code, locale)?.name ?? c.name; return <span className={`country-badge country-${c.code.toLowerCase()}`} title={name}>{c.flag} {c.code}</span>; })()}
           {listing.is_sold && <span className="sold-badge">{t("badge_sold")}</span>}
-          {listing.auction_date && <a className="auction-badge badge-clickable" href="#/auctions">🔨 Auction</a>}
+          {listing.auction_date && <a className="auction-badge badge-clickable" href="#/auctions">🔨 {t("badge_auction")}</a>}
         </div>
         <div className="price-row">
           <p className="price">{formatPrice(listing.price, listing.currency, locale)}</p>

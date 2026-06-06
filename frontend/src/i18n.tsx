@@ -35,6 +35,7 @@ const en = {
   filter_new: "New <1,000 km",
   filter_hide_sold: "Hide unavailable",
   badge_sold: "Sold",
+  badge_auction: "Auction",
   input_min: "Min",
   input_max: "Max",
   // Sort options
@@ -229,6 +230,7 @@ const fr: Record<TKey, string> = {
   filter_new: "Neuf <1 000 km",
   filter_hide_sold: "Masquer indispos",
   badge_sold: "Vendu",
+  badge_auction: "Enchère",
   input_min: "Min",
   input_max: "Max",
   // Sort options

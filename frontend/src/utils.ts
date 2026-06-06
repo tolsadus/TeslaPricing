@@ -110,14 +110,14 @@ export function getCountry(source: string | null): { code: string; flag: string;
 }
 
 // Derive flag/name from a 2-letter ISO country code (e.g. a listing's market).
-export function getCountryByCode(code: string | null): { code: string; flag: string; name: string } | null {
+export function getCountryByCode(code: string | null, locale = "en"): { code: string; flag: string; name: string } | null {
   if (!code) return null;
   const cc = code.toUpperCase();
   if (!/^[A-Z]{2}$/.test(cc)) return null;
   const flag = String.fromCodePoint(...[...cc].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65));
   let name = cc;
   try {
-    name = new Intl.DisplayNames(["en"], { type: "region" }).of(cc) ?? cc;
+    name = new Intl.DisplayNames([locale], { type: "region" }).of(cc) ?? cc;
   } catch {
     // Intl.DisplayNames unavailable — fall back to the code.
   }

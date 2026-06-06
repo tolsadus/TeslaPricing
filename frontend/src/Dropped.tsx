@@ -55,7 +55,7 @@ export default function Dropped({ isSaved, toggle, isComparing, toggleCompare, c
           <select className="country-select" value={country}
             onChange={(e) => setCountry(e.target.value)}>
             {markets.map((m) => {
-              const info = getCountryByCode(m.market);
+              const info = getCountryByCode(m.market, locale);
               return <option key={m.market} value={m.market}>{info ? `${info.flag} ${info.name}` : m.market}</option>;
             })}
           </select>

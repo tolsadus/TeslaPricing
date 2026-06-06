@@ -106,7 +106,8 @@ type SidebarProps = {
 };
 
 export default function Sidebar({ filters, setFilters, defaultLimit, resetKey, bumpResetKey, hiddenCount = 0, showHidden = false, onToggleHidden, onClearHidden, markets }: SidebarProps) {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
+  const locale = lang === "fr" ? "fr-FR" : "en-GB";
 
   return (
     <aside className="sidebar">
@@ -144,7 +145,7 @@ export default function Sidebar({ filters, setFilters, defaultLimit, resetKey, b
           onChange={(e) => setFilters((f) => ({ ...f, country: e.target.value || undefined }))}>
           <option value="">{t("filter_all")}</option>
           {markets.map((m) => {
-            const info = getCountryByCode(m.market);
+            const info = getCountryByCode(m.market, locale);
             return <option key={m.market} value={m.market}>{info ? `${info.flag} ${info.name}` : m.market}</option>;
           })}
         </select>
