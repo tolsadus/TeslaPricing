@@ -751,6 +751,17 @@ html, body {
 .range-input:focus { outline: none; border-color: var(--text-mute); }
 .range-input:disabled { opacity: 0.35; cursor: not-allowed; }
 .range-inputs-sep { font-size: 0.75rem; color: var(--text-mute); }
+.country-select {
+  width: 100%;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.8rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  cursor: pointer;
+}
+.country-select:focus { outline: none; border-color: var(--text-mute); }
 
 /* Range slider */
 .range-filter { display: flex; flex-direction: column; gap: 0.7rem; }

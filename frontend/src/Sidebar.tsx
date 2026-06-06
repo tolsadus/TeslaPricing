@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "./i18n";
 import { getCountryByCode } from "./utils";
+import { fetchMarkets } from "./api";
 import type { ListingFilters } from "./types";
 
 const MODELS = ["Model S", "Model 3", "Model X", "Model Y", "Cybertruck", "Roadster"] as const;
-const COUNTRIES = ["FR", "BE", "NL"] as const;
 const SOURCES = ["tesla", "leboncoin", "lacentrale", "capcar", "lbauto", "aramisauto", "gmecars", "renew", "heycar", "alcopa", "mmxbv", "nikola", "ewigo"] as const;
 const DRIVETRAINS = ["RWD", "AWD", "Performance", "Plaid"] as const;
 const AUTOPILOTS = ["EAP", "FSD"] as const;
@@ -107,6 +107,11 @@ type SidebarProps = {
 
 export default function Sidebar({ filters, setFilters, defaultLimit, resetKey, bumpResetKey, hiddenCount = 0, showHidden = false, onToggleHidden, onClearHidden }: SidebarProps) {
   const { t } = useTranslation();
+  const [markets, setMarkets] = useState<string[]>([]);
+
+  useEffect(() => {
+    fetchMarkets().then((rows) => setMarkets(rows.map((r) => r.market))).catch(() => {});
+  }, []);
 
   return (
     <aside className="sidebar">
@@ -257,17 +262,14 @@ export default function Sidebar({ filters, setFilters, defaultLimit, resetKey, b
       </SidebarSection>
 
       <SidebarSection title={t("filter_country")}>
-        <div className="chip-options">
-          {COUNTRIES.map((c) => {
-            const isActive = filters.country === c;
-            const flag = getCountryByCode(c)?.flag ?? "";
-            return (
-              <button key={c} type="button" aria-pressed={isActive}
-                className={`chip-btn ${isActive ? "active" : ""}`}
-                onClick={() => setFilters((f) => ({ ...f, country: f.country === c ? undefined : c }))}>{flag} {c}</button>
-            );
+        <select className="country-select" value={filters.country ?? ""}
+          onChange={(e) => setFilters((f) => ({ ...f, country: e.target.value || undefined }))}>
+          <option value="">{t("filter_all")}</option>
+          {markets.map((c) => {
+            const info = getCountryByCode(c);
+            return <option key={c} value={c}>{info ? `${info.flag} ${info.name}` : c}</option>;
           })}
-        </div>
+        </select>
       </SidebarSection>
 
       <SidebarSection title={t("filter_source")}>

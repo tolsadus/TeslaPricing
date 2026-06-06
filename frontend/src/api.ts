@@ -35,7 +35,10 @@ function applyFilters<T>(query: T, filters: ListingFilters): T {
   if (filters.autopilot) q = q.eq("autopilot", filters.autopilot);
   if (filters.seats !== undefined) q = q.eq("seats", filters.seats);
   if (filters.color_family && COLOR_OR[filters.color_family]) q = q.or(COLOR_OR[filters.color_family]);
-  if (filters.country && COUNTRY_OR[filters.country]) q = q.or(COUNTRY_OR[filters.country]);
+  if (filters.country) {
+    if (COUNTRY_OR[filters.country]) q = q.or(COUNTRY_OR[filters.country]);
+    else q = q.eq("market", filters.country);
+  }
   if (filters.min_price !== undefined) q = q.gte("price", filters.min_price);
   if (filters.max_price !== undefined) q = q.lte("price", filters.max_price);
   if (filters.min_year !== undefined) q = q.gte("year", filters.min_year);
@@ -110,6 +113,12 @@ export async function fetchCount(filters: ListingFilters = {}): Promise<number> 
   const { count, error } = await query;
   if (error) throw new Error(error.message);
   return count ?? 0;
+}
+
+export async function fetchMarkets(): Promise<{ market: string; n: number }[]> {
+  const { data, error } = await supabase.rpc("get_markets");
+  if (error) throw new Error(error.message);
+  return (data ?? []) as { market: string; n: number }[];
 }
 
 export async function fetchStats(): Promise<{ total: number; by_source: Record<string, number> }> {
