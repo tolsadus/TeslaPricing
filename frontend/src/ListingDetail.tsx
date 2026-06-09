@@ -26,7 +26,7 @@ function PriceChart({ points, emptyMessage, currency }: { points: PricePoint[]; 
 
   const W = 720;
   const H = 280;
-  const PAD_L = 64;
+  const PAD_L = 88;
   const PAD_R = 24;
   const PAD_T = 24;
   const PAD_B = 40;
@@ -90,15 +90,19 @@ function PriceChart({ points, emptyMessage, currency }: { points: PricePoint[]; 
       <path d={area} fill="url(#area-grad)" />
       <path d={path} fill="none" stroke="#171a20" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
 
-      {plotted.slice(0, valid.length).map((pt, i) => (
-        <g key={i}
-          onMouseEnter={() => setTooltip(pt)}
-          style={{ cursor: "default" }}
-        >
-          <circle cx={pt.x} cy={pt.y} r="10" fill="transparent" />
-          <circle cx={pt.x} cy={pt.y} r={tooltip?.date === pt.date ? 6 : 4} fill="#fff" stroke="#171a20" strokeWidth="2" />
-        </g>
-      ))}
+      {plotted.slice(0, valid.length).map((pt, i) => {
+        const prev = i > 0 ? valid[i - 1].price : null;
+        const stroke = prev === null || pt.price === prev ? "#171a20" : pt.price < prev ? "#16a34a" : "#dc2626";
+        return (
+          <g key={i}
+            onMouseEnter={() => setTooltip(pt)}
+            style={{ cursor: "default" }}
+          >
+            <circle cx={pt.x} cy={pt.y} r="10" fill="transparent" />
+            <circle cx={pt.x} cy={pt.y} r={tooltip?.date === pt.date ? 6 : 4} fill="#fff" stroke={stroke} strokeWidth="2" />
+          </g>
+        );
+      })}
 
       {tooltip && (() => {
         const tipX = Math.min(tooltip.x, W - TIP_W - 4);
