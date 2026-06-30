@@ -67,10 +67,21 @@ async function markRemovedFor(source, _runStart, total) {
 
 async function finalize(source, runStart, total) {
   if (source && runStart && total) await markRemovedFor(source, runStart, total)
+  const frames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
+  const t0 = Date.now()
+  let i = 0
+  const spinner = setInterval(() => {
+    const secs = ((Date.now() - t0) / 1000).toFixed(0)
+    process.stdout.write(`\r${frames[i++ % frames.length]} refreshing listings_with_delta... ${secs}s`)
+  }, 100)
   try {
     await refreshDelta()
+    clearInterval(spinner)
+    process.stdout.write('\r\x1b[K')
     console.log('Refreshed listings_with_delta.')
   } catch (err) {
+    clearInterval(spinner)
+    process.stdout.write('\r\x1b[K')
     console.error('Failed to refresh listings_with_delta:', err.message)
   }
   await pool.end()
