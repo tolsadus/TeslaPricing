@@ -242,7 +242,13 @@ async function upsert(rows, { quiet = false } = {}) {
 }
 
 async function refreshDelta() {
-  await pool.query('SELECT public.refresh_listings_with_delta()')
+  const client = await pool.connect()
+  try {
+    await client.query('SET statement_timeout = 0')
+    await client.query('SELECT public.refresh_listings_with_delta()')
+  } finally {
+    client.release()
+  }
 }
 
 async function markRemovedByAge(source, days = 7) {
